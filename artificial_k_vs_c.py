@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 
 def BA_closeVSdeg(m_,N_, its, plot=False):
   df = pd.DataFrame({"k":[],"c":[]})
+  print("\n-----------------------------------------------\n")
+  print("m = ",m_)
+  print("N = ",N_)
   for i in range(its):
     G = Graph.Barabasi(N_,m_)
     degrees = np.asarray(G.degree())
@@ -49,14 +52,12 @@ def BA_closeVSdeg(m_,N_, its, plot=False):
     plt.show()  
   return ks, inv_c, inv_c_err
 
-kss, inv_cs, err = BA_closeVSdeg(5,4000,1,False)
 
 
+kss, inv_cs, err = BA_closeVSdeg(5,4000,100,True)
 
-
-
-rho, pc= stats.pearsonr(kss, 1/inv_cs)
-print(rho)
+#rho, pc= stats.pearsonr(kss, 1/inv_cs)
+#print(rho)
 
 def analytic(k,a,b):
   return -a*np.log(k)+b
@@ -71,3 +72,16 @@ print("1/ln(z) fit :", -fit[0],"+/-",np.sqrt(V[0][0]))
 print("B fit :",fit[1],"+/-",np.sqrt(V[1][1]))
 #print(inv_cs)
 #print(err)
+
+
+#TO DO:
+"""
+* Filter out rows where k=0
+* Filter out rows for with zero/nan std
+* Filter out if only appears once?
+* Return in nice format
+* Get on nice graphs for ER, BA for multiple Ns with fit line
+* Download and filter graph_tool networks
+* Identify other network sources
+* 
+"""
