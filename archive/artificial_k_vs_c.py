@@ -83,5 +83,5 @@ print("B fit :",fit[1],"+/-",np.sqrt(V[1][1]))
 * Get on nice graphs for ER, BA for multiple Ns with fit line
 * Download and filter graph_tool networks
 * Identify other network sources
-* 
+* Run through fitting before agrregation - get better error
 """
