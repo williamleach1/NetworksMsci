@@ -35,4 +35,10 @@ Extensions and Investiagtions (side quests):
 * Investigate Branching ratio numerically
 * Investigate Hard-Cut off numerically
 
+Installing graph-tool
+=====================
+1.) Install conda on MacOs from https://docs.conda.io/en/latest/miniconda.html
+2.) Install graph-tool with conda as in https://git.skewed.de/count0/graph-tool/-/wikis/installation-instructions#macos-x
+3.) When in terminal should have (base) in front of the path - running conda activate gt will change this to (gt) which is the environment for graph-tool
+4.) Need to install other packages within the environment with - conda install <package> - e.g. conda install numpy
     
