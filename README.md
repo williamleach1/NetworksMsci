@@ -28,7 +28,8 @@ TO DO - Second Degree vs Closeness:
 * New fit-func for second degree.
 * New second degree (and closeness) finding function for
     second degree vs closeness.
-* Process artificial and 
+* Process artificial and real world networks for second
+    degree vs closeness.
 
 Extensions and Investiagtions (side quests):
 * Investigate Branching ratio numerically
