@@ -96,10 +96,11 @@ print(unipartite_df)
 # Save unpartite and bipartite as csv
 os.makedirs('Data', exist_ok=True)  
 unipartite_df.to_csv('Data/unipartite.csv')  
-
+unipartite_df.to_pickle('Data/unipartite.pkl')  
 bipartite_df = bipartite_df.transpose()
 print(bipartite_df)
 
 bipartite_df.to_csv('Data/bipartite.csv')  
+bipartite_df.to_pickle('Data/bipartite.pkl')
 
 
