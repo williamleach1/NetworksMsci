@@ -1,3 +1,5 @@
 Data/
 Input/
+Output/
+__pycache__/
 .DS_Store

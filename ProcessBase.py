@@ -22,7 +22,9 @@ def GetKC(g):
     k : array
         Degree of each node
     c : array
-        Closeness of each node"""
+        Closeness of each node
+    inv_c : array
+        Inverse Closeness of each node"""
     c = centrality.closeness(g).get_array()
     k = g.get_total_degrees(g.get_vertices())
     #print(np.mean(k))
@@ -30,12 +32,13 @@ def GetKC(g):
     k = k[k > 0]
     k = k[~np.isnan(c)]
     c = c[~np.isnan(c)]
-    return k, c
+    inv_c = 1/c
+    return k, c, inv_c
 
 # function to aggregate over x to find mean and standard error in y
 #           --> remove if only appears once
-def aggregate(x, y):
-    """Aggregate over x to find mean and standard error in y
+def aggregate_dict(x, y):
+    """Aggregate over x to find mean and standard deviation in y
     Parameters  
     ----------                  
     x : array
@@ -44,72 +47,19 @@ def aggregate(x, y):
         y data
     Returns
     -------     
-    x_mean : array
-        Mean x data
-    y_mean : array
-        Mean y data
-    y_err : array
-        Standard error of y data"""
-    x_mean = np.unique(x)
+    res : dictionary
+        Dictionary containing x, y, and y error"""
+    x_mean, counts = np.unique(x,return_counts=True)
     y_mean = np.zeros(len(x_mean))
     y_err = np.zeros(len(x_mean))
+    y_std = np.zeros(len(x_mean))
     for i in range(len(x_mean)):
         y_mean[i] = np.mean(y[x == x_mean[i]])
-        y_err[i] = np.std(y[x == x_mean[i]])/np.sqrt(len(y[x == x_mean[i]]))
-    return x_mean, y_mean, y_err
+        y_std[i] = np.std(y[x == x_mean[i]])
+        y_err[i] = y_std[i]/np.sqrt(counts[i])
+    res = {x_mean[i]:[y_mean[i],y_err[i],y_std[i],counts[i]] for i in range(len(x_mean))}
+    return res
 
-
-
-
-# class to plot in groups
-#           --> options for legends ect - class based?
-#           --> Options to save plots
-#           --> Options to save data
-class Plotter:
-    def __init__(self):
-        self.x = []
-        self.y = []
-        self.x_collapsed = []
-        self.y_collapsed = []
-        self.labels = []
-        self.colors = []
-        self.markers = []
-        self.linestyles = []
-        self.x_label = ''
-        self.y_label = ''
-        self.title = ''
-        self.x_lim = [-np.inf, np.inf]
-        self.y_lim = [-np.inf, np.inf]
-        self.legend = False
-        self.legend_loc = 'best'
-        self.legend_title = ''
-        self.data_collapse = False
-        self.collapse_function = None
-
-    def add_plot(self, x, y, label, color, marker, linestyle, collapse=False, collapse_function=None):
-        self.x.append(x)
-        self.y.append(y)
-        self.labels.append(label)
-        self.colors.append(color)
-        self.markers.append(marker)
-        self.linestyles.append(linestyle)
-        if collapse:
-            self.data_collapse = True
-            self.collapse_function = collapse_function
-
-    def plot(self,scale='log',legend=True,save=False):
-        for i in range(len(self.x)):
-            plt.plot(self.x[i], self.y[i], label=self.labels[i], color=self.colors[i], marker=self.markers[i], linestyle=self.linestyles[i])
-        plt.xlabel(self.x_label)
-        plt.ylabel(self.y_label)
-        plt.title(self.title)
-        plt.xlim(self.x_lim)
-        plt.ylim(self.y_lim)
-        if self.legend:
-            plt.legend(loc=self.legend_loc, title=self.legend_title)
-        if scale == 'log':
-            plt.xscale('log')
-        plt.show()
 
 # Function to perform pearson test on unaggregated data.
 def pearson(x, y):
@@ -152,14 +102,14 @@ def spearman(x, y):
 def func(k, a, b):
     return -a*np.log(k) + b
 
-def Uni_1st(k,c,function,to_print=False):
+def fitter(k,inv_c,function,to_print=False):
     """Perform fit to specified function
     Parameters
     ----------
     k : array
         Degree of each node
-    c : array   
-        Closeness of each node
+    inv_c : array   
+        Inverse Closeness of each node
     function : function
         Function to fit to
     to_print : bool
@@ -175,38 +125,57 @@ def Uni_1st(k,c,function,to_print=False):
     pcov[1,1] : float
         b error
     """
-    popt, pcov = optimize.curve_fit(function, k, 1/c)
+    popt, pcov = optimize.curve_fit(function, k, inv_c)
     if to_print:
         print("1/ln(z) fit :", popt[0],"+/-",np.sqrt(pcov[0][0]))
         print("B fit :",popt[1],"+/-",np.sqrt(pcov[1][1]))
     return popt[0], np.sqrt(pcov[0][0]), popt[1], np.sqrt(pcov[1][1])
 
 # Function to perform chi square test on unaggregated data using standard deviation
-def red_chi_square(k, c, function, popt, sigma):
+def red_chi_square(k, inv_c, function, popt, stats_dict):
     """Perform chi square test on unaggregated data
     Parameters  
     ----------                  
     k : array
         Degree of each node
-    c : array
-        Closeness of each node
-    expected_inv_c : array
-        Expected inverse closeness of each node
+    inv_c : array
+        Inverse Closeness of each node
+    function : function
+        Function to fit to
+    popt : array
+        Optimal parameters of fit
+    sigma_dict : dict
+        Dictionary of statistics (including standard deviation) 
+        for given degree
+    
     Returns
     -------     
     chi : float
         Chi square value
     p : float
         p-value"""
-    inv_c = 1/c
-    expected_inv_c = function(k, *popt)
-    chi = np.sum(((inv_c - expected_inv_c)**2)/(sigma**2))
-    rchi = chi/(len(k)-2)
+    #initialise new lists for when counts>1
+    sigmas = []
+    new_inv_c = []
+    new_k = []
+    for i in range(len(inv_c)):
+        sigma = stats_dict[k[i]][2]
+        count = stats_dict[k[i]][3]
+        if sigma>0.01 and count>1:
+            sigmas.append(sigma)
+            new_inv_c.append(inv_c[i])
+            new_k.append(k[i])
+    sigmas = np.asarray(sigmas)
+    new_inv_c = np.asarray(new_inv_c)
+    new_k = np.asarray(new_k)
+    expected_inv_c = function(new_k, *popt)
+    chi = np.sum(((new_inv_c - expected_inv_c)**2)/(sigmas**2))
+    rchi = chi/(len(new_k)-2)
     return rchi
 
 # Function to do all above for given graph
 
-def process(g, to_print=False):
+def process(g, function,to_print=False):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -238,10 +207,10 @@ def process(g, to_print=False):
         Spearman correlation
     rsp : float
         p-value"""
-    k, c = GetKC(g)
-    a, a_err, b, b_err = Uni_1st(k, c, func, to_print=to_print)
-    expected_inv_c = func(k, a, b)
-    rchi = 1 #red_chi_square(k, c, expected_inv_c)
+    k, c, inv_c = GetKC(g)
+    a, a_err, b, b_err = fitter(k, inv_c, function, to_print=to_print)
+    statistics_dict = aggregate_dict(k, inv_c)
+    rchi = red_chi_square(k, inv_c, function, [a, b],statistics_dict)
     r, rp = pearson(k, c)
     rs, rsp = spearman(k, c)
     if to_print:
@@ -312,51 +281,7 @@ def config_BA(n, av_deg):
     g = generation.random_rewire(g, model="configuration")
     return g
 '''
-
-# Run for BA, ER and Config. return as dataframe
-
-def run(gen_func, ns, av_deg):
-    """Perform all analysis on graph
-    Parameters  
-    ----------                  
-    gen_func : function
-        Function to generate graph
-    ns : array
-        Array of number of nodes
-    av_deg : int
-        Average degree
-    Returns
-    -------     
-    df : dataframe
-        Dataframe containing results"""
-    
-    final_df = pd.DataFrame(columns=["N","1/ln(z)", "1/ln(z) err", "Beta", 
-                                "Beta err", "rchi", "pearson r","pearson p-val",
-                                "spearmans r","spearmans p-val"])    
-    for n in ns:
-        g = gen_func(n, av_deg)
-        k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp = process(g, to_print=False)
-        temp_df = pd.DataFrame({"N": n, "1/ln(z)": a, "1/ln(z) err": a_err, "Beta": b, 
-                        "Beta err": b_err, "rchi": rchi, "pearson r": r,
-                         "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, index=[n])
-        final_df = pd.concat([final_df, temp_df])
-    return final_df
-"""
-ns = [1000,2000,4000,8000,16000]
-av_degree = 10
-
-df_BA = run(BA, ns, av_degree)
-print('BA done')
-print(df_BA)
-df_ER = run(ER, ns, av_degree)
-print('ER done')
-print(df_ER)
-"""
-# Load in unipartite and run for each real networks
-# Need to get column names for each network from the dataframe
-unipartite = pd.read_pickle('Data/unipartite.pkl')
-uni_network_names = unipartite.columns.values.tolist()
-
+# Function to load graph from Netzschleuder
 def load_graph(name):
     """Load graph from pickle
     Parameters  
@@ -370,28 +295,3 @@ def load_graph(name):
     g = collection.ns[name]
     return g
 
-def run_real(names):
-    """Perform all analysis on graph
-    Parameters  
-    ----------                  
-    name : string
-        Name of graph
-    Returns
-    -------     
-    df : dataframe
-        Dataframe containing results"""
-    final_df = pd.DataFrame(columns=["N","1/ln(z)", "1/ln(z) err", "Beta",
-                                "Beta err", "rchi", "pearson r","pearson p-val",
-                                "spearmans r","spearmans p-val"])
-    num = len(names)
-    for i in tqdm.tqdm((range(num))):
-        g = load_graph(names[i])
-        k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp = process(g, to_print=False)
-        temp_df = pd.DataFrame({"N": len(g.get_vertices()), "1/ln(z)": a, "1/ln(z) err": a_err, 
-                            "Beta": b, "Beta err": b_err, "rchi": rchi, "pearson r": r,
-                            "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, index=[names[i]])
-        final_df = pd.concat([final_df, temp_df])
-    return final_df
-
-df = run_real(uni_network_names[0:5])
-print(df)

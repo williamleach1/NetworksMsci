@@ -12,11 +12,15 @@ ProcessBase.py used to process artificial and eventually
 
 TO DO - Base:
 * config-BA model needs adding and analysing.
+* Need a file management tree generator
+* Generate visual of each network?
 * Plots and data-collapse needs adding.
-* fix reduced chi-squared
+* fix reduced chi-squared - DONE - NEED TO VERIFY
 * Handling repeats for artificial - is it neccesary?
-* Finish pipeline to download real networks and process them.
-* Investigate beta compared to 
+* Handle warninggs and errors fully
+* Process networks where N>100000
+* Find branching ratio analytically
+* find branching ratio from fit
 
 TO DO - Bipartite:
 * New fit-func for bipartite.
