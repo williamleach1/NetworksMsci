@@ -59,7 +59,7 @@ unipartite_df = pd.read_pickle('Data/unipartite.pkl')
 
 # Filter out num_vertices>2000000
 unipartite_df = unipartite_df.transpose()
-unipartite_df = unipartite_df.loc[unipartite_df['num_vertices']<50000,]
+unipartite_df = unipartite_df.loc[unipartite_df['num_vertices']<100000,]
 unipartite_df = unipartite_df.transpose()
 uni_network_names = unipartite_df.columns.values.tolist()
 print(len(uni_network_names))
