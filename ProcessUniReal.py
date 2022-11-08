@@ -5,7 +5,7 @@ import scipy as sp
 from Plotter import *
 warnings.filterwarnings("error")
 
-
+start = time.time()
 def run_real(names):
     """Perform all analysis on graph
     Parameters  
@@ -59,7 +59,7 @@ unipartite_df = pd.read_pickle('Data/unipartite.pkl')
 
 # Filter out num_vertices>2000000
 unipartite_df = unipartite_df.transpose()
-unipartite_df = unipartite_df.loc[unipartite_df['num_vertices']<200000,]
+unipartite_df = unipartite_df.loc[unipartite_df['num_vertices']<50000,]
 unipartite_df = unipartite_df.transpose()
 uni_network_names = unipartite_df.columns.values.tolist()
 print(len(uni_network_names))
@@ -80,3 +80,6 @@ html = df.to_html()
 text_file = open("Output/RealUnipartiteNets.html", "w")
 text_file.write(html)
 text_file.close()
+end = time.time()
+
+print('Time taken: ', end-start)
