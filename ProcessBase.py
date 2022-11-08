@@ -8,9 +8,12 @@ from scipy import optimize
 import matplotlib.pyplot as plt
 import random
 from tqdm import tqdm
+import os
+from pathlib import Path
 
 # Function to find closeness and degree for graph_tool graph
 # remove values if degree 0
+
 def GetKC(g):
     """Get closeness and degree for graph_tool graph
     Parameters  
@@ -53,11 +56,13 @@ def aggregate_dict(x, y):
     y_mean = np.zeros(len(x_mean))
     y_err = np.zeros(len(x_mean))
     y_std = np.zeros(len(x_mean))
+    y_counts = np.zeros(len(x_mean))
     for i in range(len(x_mean)):
         y_mean[i] = np.mean(y[x == x_mean[i]])
         y_std[i] = np.std(y[x == x_mean[i]])
         y_err[i] = y_std[i]/np.sqrt(counts[i])
-    res = {x_mean[i]:[y_mean[i],y_err[i],y_std[i],counts[i]] for i in range(len(x_mean))}
+        y_counts[i] = counts[i]
+    res = {x_mean[i]:[y_mean[i],y_err[i],y_std[i],y_counts[i]] for i in range(len(x_mean))}
     return res
 
 
@@ -161,7 +166,7 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
     for i in range(len(inv_c)):
         sigma = stats_dict[k[i]][2]
         count = stats_dict[k[i]][3]
-        if sigma>0.01 and count>1:
+        if sigma>0.001 and count>1:
             sigmas.append(sigma)
             new_inv_c.append(inv_c[i])
             new_k.append(k[i])
@@ -219,7 +224,7 @@ def process(g, function,to_print=False):
         print("Pearson p-value:", rp)
         print("Spearman correlation:", rs)
         print("Spearman p-value:", rsp)
-    return k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp
+    return k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp , statistics_dict
 
 # Function to generate BA, ER, Config-BA
 
@@ -295,3 +300,44 @@ def load_graph(name):
     g = collection.ns[name]
     return g
 
+# Function to generate folders for saving data, plots
+def MakeFolders(names, SubFolder):
+    """Make folders for each network
+    Parameters
+    ----------
+    names : list
+        List of names of networks
+    SubFolder : string
+        Name of subfolder to create
+    Returns
+    -------
+    None"""
+    for i in names:
+        path = 'Output/'+SubFolder +'/'+ i
+        path = os.path.normpath(path)
+        if not os.path.exists(path):
+            Path(path).mkdir(parents=True, exist_ok=True)
+
+def unpack_stat_dict(dict):
+    ks = list(dict.keys())
+    ks_final = []
+    counts = []
+    means = []
+    stds = []
+    errs = []
+    for k in ks:
+        vals = dict[k]
+        if vals[3]>1:
+            ks_final.append(k)
+            means.append(vals[0])
+            errs.append(vals[1])
+            stds.append(vals[2])
+            counts.append(vals[3])
+    ks = np.asarray(ks)
+    ks_final = np.asarray(ks_final)
+    inv_c_mean = np.asarray(means)
+    errs = np.asarray(errs)
+    stds = np.asarray(stds)
+    counts = np.asarray(counts)
+    return ks_final, inv_c_mean, errs, stds, counts
+        
