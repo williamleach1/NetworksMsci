@@ -46,6 +46,9 @@ def run_real(names):
         except RuntimeWarning:
             error_report.append([names[i], ':  RuntimeWarning'])
             pass
+        except sp.optimize._optimize.OptimizeWarning:
+            error_report.append([names[i], ':  OptimizeWarning'])
+            pass 
     print('-----------------------------------')
     print('Error report: \n')
     for i in error_report:
@@ -59,7 +62,7 @@ unipartite_df = pd.read_pickle('Data/unipartite.pkl')
 
 # Filter out num_vertices>2000000
 unipartite_df = unipartite_df.transpose()
-unipartite_df = unipartite_df.loc[unipartite_df['num_vertices']<100000,]
+unipartite_df = unipartite_df.loc[unipartite_df['num_vertices']<50000,]
 unipartite_df = unipartite_df.transpose()
 uni_network_names = unipartite_df.columns.values.tolist()
 print(len(uni_network_names))
