@@ -38,6 +38,14 @@ def GetKC(g):
     inv_c = 1/c
     return k, c, inv_c
 
+# Function to get second degree
+#
+#
+#--------TO BE ADDED----------------
+#
+#
+
+
 # function to aggregate over x to find mean and standard error in y
 #           --> remove if only appears once
 def aggregate_dict(x, y):
@@ -102,11 +110,27 @@ def spearman(x, y):
     r, p = stats.spearmanr(x, y)
     return r, p
 
-# Function to fit to
+# Function to fit to for unipartite 1st order
 # and to perform straight line fit to unaggregated data
 def func(k, a, b):
     return -a*np.log(k) + b
 
+# Function describing analytic relation for bipartite graphs
+#
+#
+#---------TO BE ADDED----------------
+#
+#
+
+# Function Descibing analytic relation with second degree
+#
+#
+#---------TO BE ADDED----------------
+#
+#
+
+
+# Function to perform fit to analytic function
 def fitter(k,inv_c,function,to_print=False):
     """Perform fit to specified function
     Parameters
@@ -268,6 +292,8 @@ def ER(n, av_deg):
                 g.add_edge(a,b)
     return g
 
+# Function to generate Config-BA graph
+# NEEDS TO BE ADDED
 '''
 def config_BA(n, av_deg):
     """Generate Config-BA graph
@@ -286,6 +312,15 @@ def config_BA(n, av_deg):
     g = generation.random_rewire(g, model="configuration")
     return g
 '''
+# Function to generate Bipaerite graph
+#
+#
+#----------TO BE ADDED----------
+#
+#
+#
+
+
 # Function to load graph from Netzschleuder
 def load_graph(name):
     """Load graph from pickle
@@ -318,6 +353,9 @@ def MakeFolders(names, SubFolder):
         if not os.path.exists(path):
             Path(path).mkdir(parents=True, exist_ok=True)
 
+# Function to unpack statistics dictionary
+# Is a bit messy and inefficient, but works
+# We use this in plotting - input is from aggregation_dict
 def unpack_stat_dict(dict):
     ks = list(dict.keys())
     ks_final = []

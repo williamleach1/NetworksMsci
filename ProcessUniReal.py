@@ -34,7 +34,8 @@ def run_real(names):
             plots.plot(save=True,savename=save_name)
             temp_df = pd.DataFrame({"N": len(g.get_vertices()), "1/ln(z)": a, "1/ln(z) err": a_err, 
                                 "Beta": b, "Beta err": b_err, "rchi": rchi, "pearson r": r,
-                                "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, index=[names[i]])
+                                "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, 
+                                index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
         except OSError:
             error_report.append([names[i], ':  OSError'])
@@ -58,7 +59,7 @@ unipartite_df = pd.read_pickle('Data/unipartite.pkl')
 
 # Filter out num_vertices>2000000
 unipartite_df = unipartite_df.transpose()
-unipartite_df = unipartite_df.loc[unipartite_df['num_vertices']<50000,]
+unipartite_df = unipartite_df.loc[unipartite_df['num_vertices']<200000,]
 unipartite_df = unipartite_df.transpose()
 uni_network_names = unipartite_df.columns.values.tolist()
 print(len(uni_network_names))
@@ -79,8 +80,3 @@ html = df.to_html()
 text_file = open("Output/RealUnipartiteNets.html", "w")
 text_file.write(html)
 text_file.close()
-'''
-        except RuntimeWarning:
-            error_report.append([names[i], ':  RuntimeWarning'])
-            pass
-'''
