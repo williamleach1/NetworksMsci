@@ -335,6 +335,23 @@ def load_graph(name):
     g = collection.ns[name]
     return g
 
+def filter_num_verticies(names_df, num):
+    """Filter graphs by number of verticies
+    Parameters  
+    ----------                  
+    names_df : dataframe
+        Dataframe of graph names and features
+    num : int
+        Number of verticies to filter by
+    Returns
+    -------     
+    names_df : dataframe
+        Filtered dataframe"""
+    names_df = names_df.transpose()
+    names_df = names_df.loc[names_df['num_vertices']<num,]
+    names_df = names_df.transpose()
+    return names_df
+
 # Function to generate folders for saving data, plots
 def MakeFolders(names, SubFolder):
     """Make folders for each network
@@ -379,3 +396,28 @@ def unpack_stat_dict(dict):
     counts = np.asarray(counts)
     return ks_final, inv_c_mean, errs, stds, counts
         
+# Function to write dataframes to html
+def write_html(df, name, folder='Output'):
+    """Write dataframe to html
+    Parameters
+    ----------
+    df : dataframe
+        Dataframe to be written
+    name : string
+        Name of file
+    Returns
+    -------
+    None"""
+    html = df.to_html()
+    save_name = folder + '/' + name + '.html'
+    text_file = open(save_name, "w")
+    text_file.write(html)
+    text_file.close()
+
+# Function to write dataframes to latex
+#
+#
+#----------TO BE ADDED----------
+#
+#
+#

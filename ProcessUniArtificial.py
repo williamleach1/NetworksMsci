@@ -3,7 +3,7 @@ import os
 from Plotter import *
 # Run for BA, ER and Config. return as dataframe
 
-def run(gen_func, ns, av_deg, name):
+def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -34,6 +34,12 @@ def run(gen_func, ns, av_deg, name):
         final_df = pd.concat([final_df, temp_df])
     save_name = 'Output/ArtificialUniNets/' + name + '/K_Inv_C.png'
     plots.plot(legend=True,save=True,savename=save_name)
+    if to_html:
+        save_name_html = name +'_results'
+        write_html(final_df, save_name_html)
+    if to_print:
+        print(name+' done')
+        print(final_df)
     return final_df
 
 ns = [1000,2000,4000,8000,16000]
@@ -41,19 +47,5 @@ av_degree = 10
 names = ['BA','ER']#,'Config']
 MakeFolders(names, 'ArtificialUniNets')
 
-df_BA = run(BA, ns, av_degree, 'BA')
-print('BA done')
-print(df_BA)
-df_ER = run(ER, ns, av_degree, 'ER')
-print('ER done')
-print(df_ER)
-
-html_BA = df_BA.to_html()
-html_ER = df_ER.to_html()
-# write html to file
-text_file = open("Output/index_BA.html", "w")
-text_file.write(html_BA)
-text_file.close()
-text_file = open("Output/index_ER.html", "w")
-text_file.write(html_ER)
-text_file.close()
+df_BA = run(BA, ns, av_degree, 'BA',to_html=True, to_print=True)
+df_ER = run(ER, ns, av_degree, 'ER',to_html=True, to_print=True)

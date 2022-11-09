@@ -6,7 +6,7 @@ from Plotter import *
 warnings.filterwarnings("error")
 
 start = time.time()
-def run_real(names):
+def run_real(names, to_html=False, to_print=False):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -54,35 +54,28 @@ def run_real(names):
     for i in error_report:
         print(i[0], i[1])
     print('-----------------------------------')
+    if to_html:
+        save_name_html = 'RealUnipartiteNets_results'
+        write_html(final_df, save_name_html)
+    if to_print:
+        print('Real Unipartite done')
+        print(final_df)
     return final_df
 
 # Load in unipartite and run for each real networks
 # Need to get column names for each network from the dataframe
+# Need to do after running get_networks.py
 unipartite_df = pd.read_pickle('Data/unipartite.pkl')
-
+upper_node_limit = 50000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
-unipartite_df = unipartite_df.transpose()
-unipartite_df = unipartite_df.loc[unipartite_df['num_vertices']<50000,]
-unipartite_df = unipartite_df.transpose()
+unipartite_df = filter_num_verticies(unipartite_df, upper_node_limit)
 uni_network_names = unipartite_df.columns.values.tolist()
 print(len(uni_network_names))
-
-
 # Generate file system in /Output with separate folders for each network group
 # Create folder for each network group (if group) and second folder for each network
-
-
 MakeFolders(uni_network_names,'RealUniNets')
+# Run analysis on each network
+df = run_real(uni_network_names, to_html=True, to_print=True)
 
-
-df = run_real(uni_network_names)
-print(df)
-
-html = df.to_html()
-# write html to file
-text_file = open("Output/RealUnipartiteNets.html", "w")
-text_file.write(html)
-text_file.close()
 end = time.time()
-
 print('Time taken: ', end-start)
