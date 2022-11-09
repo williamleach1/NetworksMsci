@@ -88,7 +88,10 @@ Installing graph-tool
     - can optionally install pip
     - matplotlib
     - requests
-    - 
+    - tqdm (for progress bar)
+    - Some other packages may be needed its good to check by intsalling ipython as well
+
+
 
 
     

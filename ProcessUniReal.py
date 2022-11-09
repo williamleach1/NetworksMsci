@@ -1,5 +1,4 @@
 from ProcessBase import *
-from IPython.display import HTML
 import warnings
 import scipy as sp
 from Plotter import *
