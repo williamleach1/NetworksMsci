@@ -24,6 +24,7 @@ def run_real(names, to_html=False, to_print=False):
     pbar = tqdm((range(num)))
     for i in pbar:
         pbar.set_postfix({'Network ': names[i]})
+        # Using try to catch errors
         try:
             g = load_graph(names[i])
             k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp, statistics_dict= process(g,func, to_print=False)
@@ -37,6 +38,8 @@ def run_real(names, to_html=False, to_print=False):
                                 "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, 
                                 index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
+        # Need to handle errors otherwise code stops. This is not best practice
+        # to simply skip over erro
         except OSError:
             error_report.append([names[i], ':  OSError'])
             pass
@@ -46,17 +49,22 @@ def run_real(names, to_html=False, to_print=False):
         except RuntimeWarning:
             error_report.append([names[i], ':  RuntimeWarning'])
             pass
+        # Some devices tested have different error instead of RuntimeWarning
         except sp.optimize._optimize.OptimizeWarning:
             error_report.append([names[i], ':  OptimizeWarning'])
             pass 
+    # Printing error report
     print('-----------------------------------')
     print('Error report: \n')
     for i in error_report:
         print(i[0], i[1])
     print('-----------------------------------')
+    # Saving dataframe to html
     if to_html:
         save_name_html = 'RealUnipartiteNets_results'
         write_html(final_df, save_name_html)
+    # Print Dataframe. Bit pointless as it is saved to html 
+    # and is barely readable in terminal
     if to_print:
         print('Real Unipartite done')
         print(final_df)
@@ -77,5 +85,9 @@ MakeFolders(uni_network_names,'RealUniNets')
 # Run analysis on each network
 df = run_real(uni_network_names, to_html=True, to_print=True)
 
+# Measure time taken to run to help predict for larger networks
+# Takes around 1-2 minute per run with 50000 upper node limit
+# Takes around 40 minutes - 1 hour per run with 200000 upper node limit
+# Takes around 7 hours with 500000 upper node limit
 end = time.time()
 print('Time taken: ', end-start)
