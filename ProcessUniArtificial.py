@@ -48,8 +48,8 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
         print(dfs)
     return dfs
 
-ns = [1000,2000,4000,8000,16000,32000]
-av_degree = [10,20,40,80]
+ns = [1000,2000,4000]
+av_degree = [10,20,40]
 names = ['BA','ER']#,'Config']
 MakeFolders(names, 'ArtificialUniNets')
 
