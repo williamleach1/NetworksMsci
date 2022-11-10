@@ -30,13 +30,14 @@ def GetKC(g):
         Inverse Closeness of each node"""
     c = centrality.closeness(g).get_array()
     k = g.get_total_degrees(g.get_vertices())
+    mean_k = np.mean(k)
     #print(np.mean(k))
     c = c[k > 0]
     k = k[k > 0]
     k = k[~np.isnan(c)]
     c = c[~np.isnan(c)]
     inv_c = 1/c
-    return k, c, inv_c
+    return k, c, inv_c, mean_k
 
 # Function to get second degree
 #
@@ -190,7 +191,7 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
     for i in range(len(inv_c)):
         sigma = stats_dict[k[i]][2]
         count = stats_dict[k[i]][3]
-        if sigma>0.001 and count>1:
+        if sigma > 0.001 and count>1:
             sigmas.append(sigma)
             new_inv_c.append(inv_c[i])
             new_k.append(k[i])
@@ -236,7 +237,7 @@ def process(g, function,to_print=False):
         Spearman correlation
     rsp : float
         p-value"""
-    k, c, inv_c = GetKC(g)
+    k, c, inv_c, mean_k = GetKC(g)
     a, a_err, b, b_err = fitter(k, inv_c, function, to_print=to_print)
     statistics_dict = aggregate_dict(k, inv_c)
     rchi = red_chi_square(k, inv_c, function, [a, b],statistics_dict)
@@ -248,7 +249,7 @@ def process(g, function,to_print=False):
         print("Pearson p-value:", rp)
         print("Spearman correlation:", rs)
         print("Spearman p-value:", rsp)
-    return k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp , statistics_dict
+    return k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp , statistics_dict, mean_k
 
 # Function to generate BA, ER, Config-BA
 

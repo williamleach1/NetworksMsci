@@ -60,7 +60,6 @@ TO DO - Bipartite:
 * Plot results - k vs 1/c, data collapse
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
 
-
 TO DO - Second Degree vs Closeness:
 * New fit-func for second degree.
 * New second degree (and closeness) finding function for
@@ -69,7 +68,6 @@ TO DO - Second Degree vs Closeness:
     degree vs closeness.
 * Plot results - k2 vs 1/c, data collapse
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
-
 
 Extensions and Investiagtions (side quests):
 * Investigate Branching ratio numerically, compare to average found in fit.

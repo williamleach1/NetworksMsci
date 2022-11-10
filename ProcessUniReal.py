@@ -26,7 +26,8 @@ def run_real(names, to_html=False, to_print=False):
         # Using try to catch errors
         try:
             g = load_graph(names[i])
-            k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp, statistics_dict= process(g,func, to_print=False)
+            k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp, statistics_dict, mean_k= process(g,func, 
+                                                                                            to_print=False)
             plots = Plotter(names[i])
             ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
             plots.add_plot(ks,inv_c_mean,yerr=errs,fitline=True,function=func,popt=[a,b])
