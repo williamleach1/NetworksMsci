@@ -33,7 +33,7 @@ class Plotter:
         self.x_label = r'$k$'
         self.y_label = r'$\frac{1}{c}$'
         self.suptitle = 'Inverse Closeness against Degree'
-        self.title = ''
+        self.title = name
         self.legend = False
         self.legend_loc = 'best'
         self.legend_title = 'Series:'

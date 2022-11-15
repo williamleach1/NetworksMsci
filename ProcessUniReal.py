@@ -4,6 +4,8 @@ import scipy as sp
 from Plotter import *
 warnings.filterwarnings("error")
 
+
+
 start = time.time()
 def run_real(names, to_html=False, to_print=False):
     """Perform all analysis on graph
@@ -33,6 +35,17 @@ def run_real(names, to_html=False, to_print=False):
             plots.add_plot(ks,inv_c_mean,yerr=errs,fitline=True,function=func,popt=[a,b])
             save_name = 'Output/RealUniNets/' + names[i] + '/K_Inv_C.png'
             plots.plot(save=True,savename=save_name)
+            # now for unaggragated data plots
+            plots_unag = Plotter(names[i])
+            plots_unag.add_plot(k,1/c,fitline=True,function=func,popt=[a,b])
+            save_name2 = 'Output/RealUniNets/' + names[i] + '/K_Inv_C_unagg.png'
+            plots_unag.plot(save=True,savename=save_name2)
+            # Now for collapse plot
+            plots_collapse1 = Plotter(names[i])
+            inv_c_pred = func(ks,a,b)
+            plots_collapse1.add_plot(ks,inv_c_mean/inv_c_pred,yerr=errs/inv_c_pred)
+            save_name3 = 'Output/RealUniNets/' + names[i] + '/K_Inv_C_collapse1.png'
+            plots_collapse1.plot(save=True,savename=save_name3)
             temp_df = pd.DataFrame({"N": len(g.get_vertices()), "1/ln(z)": a, "1/ln(z) err": a_err, 
                                 "Beta": b, "Beta err": b_err, "rchi": rchi, "pearson r": r,
                                 "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, 
@@ -73,10 +86,10 @@ def run_real(names, to_html=False, to_print=False):
 # Load in unipartite and run for each real networks
 # Need to get column names for each network from the dataframe
 # Need to do after running get_networks.py
-unipartite_df = pd.read_pickle('Data/unipartite.pkl')
+Unipartite_df = pd.read_pickle('Data/unipartite.pkl')
 upper_node_limit = 50000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
-unipartite_df = filter_num_verticies(unipartite_df, upper_node_limit)
+unipartite_df = filter_num_verticies(Unipartite_df, upper_node_limit)
 uni_network_names = unipartite_df.columns.values.tolist()
 print(len(uni_network_names))
 # Generate file system in /Output with separate folders for each network group
