@@ -113,14 +113,11 @@ def spearman(x, y):
 
 # Function to fit to for unipartite 1st order
 # and to perform straight line fit to unaggregated data
-def func(k, a, b):
+def Tim(k, a, b):
     return -a*np.log(k) + b
 
-# Function describing analytic relation for bipartite graphs
-#
-#
-#---------TO BE ADDED----------------
-#
+def Harry(k, a, b, c):
+    return -a*np.log(k) + b +c
 #
 
 # Function Descibing analytic relation with second degree
@@ -159,7 +156,7 @@ def fitter(k,inv_c,function,to_print=False):
     if to_print:
         print("1/ln(z) fit :", popt[0],"+/-",np.sqrt(pcov[0][0]))
         print("B fit :",popt[1],"+/-",np.sqrt(pcov[1][1]))
-    return popt[0], np.sqrt(pcov[0][0]), popt[1], np.sqrt(pcov[1][1])
+    return popt, pcov #popt[0], np.sqrt(pcov[0][0]), popt[1], np.sqrt(pcov[1][1])
 
 # Function to perform chi square test on unaggregated data using standard deviation
 def red_chi_square(k, inv_c, function, popt, stats_dict):
@@ -238,9 +235,9 @@ def process(g, function,to_print=False):
     rsp : float
         p-value"""
     k, c, inv_c, mean_k = GetKC(g)
-    a, a_err, b, b_err = fitter(k, inv_c, function, to_print=to_print)
+    popt, pcov = fitter(k, inv_c, function, to_print=to_print)
     statistics_dict = aggregate_dict(k, inv_c)
-    rchi = red_chi_square(k, inv_c, function, [a, b],statistics_dict)
+    rchi = red_chi_square(k, inv_c, function, popt,statistics_dict)
     r, rp = pearson(k, c)
     rs, rsp = spearman(k, c)
     if to_print:
@@ -249,7 +246,7 @@ def process(g, function,to_print=False):
         print("Pearson p-value:", rp)
         print("Spearman correlation:", rs)
         print("Spearman p-value:", rsp)
-    return k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp , statistics_dict, mean_k
+    return k, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k
 
 # Function to generate BA, ER, Config-BA
 

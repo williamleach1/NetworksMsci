@@ -3,7 +3,7 @@ import os
 from Plotter import *
 # Run for BA, ER and Config. return as dataframe
 
-def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
+def run(gen_func, ns, av_deg, name,to_html=False,to_print=False,func=Tim):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -28,8 +28,12 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
         plots = Plotter(name)
         for n in ns:
             g = gen_func(n, av_degree)
-            k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,func, 
+            k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,func, 
                                                                                                 to_print=False)
+            a = popt[0]
+            b = popt[1]
+            a_err = np.sqrt(pcov[0][0])
+            b_err = np.sqrt(pcov[1][1])
             ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
             plots.add_plot(ks,inv_c_mean,errs,label='N = '+ str(n),fitline=True,function=func,popt=[a,b])
             temp_df = pd.DataFrame({"Mean k": mean_k,"N": n, "1/ln(z)": a, "1/ln(z) err": a_err, "Beta": b, 

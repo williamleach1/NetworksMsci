@@ -7,7 +7,7 @@ warnings.filterwarnings("error")
 
 
 start = time.time()
-def run_real(names, to_html=False, to_print=False):
+def run_real(names, to_html=False, to_print=False,func=Tim):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -28,8 +28,12 @@ def run_real(names, to_html=False, to_print=False):
         # Using try to catch errors
         try:
             g = load_graph(names[i])
-            k, c, a, a_err, b, b_err, rchi, r, rp, rs, rsp, statistics_dict, mean_k= process(g,func, 
-                                                                                            to_print=False)
+            k, c,popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k= process(g,func, 
+                                                                                    to_print=False)
+            a = popt[0]
+            b = popt[1]
+            a_err = np.sqrt(pcov[0][0])
+            b_err = np.sqrt(pcov[1][1])
             plots = Plotter(names[i])
             ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
             plots.add_plot(ks,inv_c_mean,yerr=errs,fitline=True,function=func,popt=[a,b])
