@@ -31,7 +31,7 @@ class Plotter:
         self.markers = []
         self.linestyles = []
         self.x_label = r'$k$'
-        self.y_label = r'$\frac{1}{c}$'
+        self.y_label = r'$\dfrac{1}{c}$'
         self.suptitle = 'Inverse Closeness against Degree'
         self.title = name
         self.legend = False
@@ -77,7 +77,7 @@ class Plotter:
             if self.fitline:
                 plt.plot(self.xfit[i], self.yfit[i], color='black', linestyle='--')
         plt.xlabel(self.x_label)
-        plt.ylabel(self.y_label)
+        plt.ylabel(self.y_label, rotation=0)
         plt.title(self.title)
         self.legend = legend
         if self.legend:

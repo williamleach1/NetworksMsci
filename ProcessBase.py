@@ -1,16 +1,17 @@
-from graph_tool import Graph, generation, centrality, collection
+import os
+import random
 import time
+from pathlib import Path
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy as sp 
-from scipy import stats
-from scipy import optimize
-import matplotlib.pyplot as plt
-import random
+import scipy as sp
+from graph_tool import Graph, centrality, collection, generation, topology
+from graph_tool import stats as gt_stats
+from scipy import optimize, stats
 from tqdm import tqdm
-import os
-from pathlib import Path
-
+from iminuit import Minuit
+from iminuit.cost import LeastSquares
 # Function to find closeness and degree for graph_tool graph
 # remove values if degree 0
 
@@ -27,17 +28,29 @@ def GetKC(g):
     c : array
         Closeness of each node
     inv_c : array
-        Inverse Closeness of each node"""
+        Inverse Closeness of each node
+    mean_k : float
+        Mean degree"""
     c = centrality.closeness(g).get_array()
     k = g.get_total_degrees(g.get_vertices())
     mean_k = np.mean(k)
-    #print(np.mean(k))
+    # remove values if degree 0
     c = c[k > 0]
     k = k[k > 0]
+    # remove values if closeness is nan
     k = k[~np.isnan(c)]
     c = c[~np.isnan(c)]
+    # Get inverse closeness
     inv_c = 1/c
     return k, c, inv_c, mean_k
+
+# Function to get K and inverse c for bipartite graph
+# Need to split into two groups
+
+
+
+
+
 
 # Function to get second degree
 #
@@ -60,12 +73,18 @@ def aggregate_dict(x, y):
     Returns
     -------     
     res : dictionary
-        Dictionary containing x, y, and y error"""
+        Dictionary containing x, y mean, y standard error, y std and y counts"""
+    # x is k for us, y is inv_c.
+    # we want to aggregate over k to find mean and standard error in inv_c
+    # for each value of k. This is to allow goo
     x_mean, counts = np.unique(x,return_counts=True)
+    # Prepare empty arrays
     y_mean = np.zeros(len(x_mean))
     y_err = np.zeros(len(x_mean))
     y_std = np.zeros(len(x_mean))
     y_counts = np.zeros(len(x_mean))
+    # Loop over unique values of x
+    # and find mean and standard error in y for each x
     for i in range(len(x_mean)):
         y_mean[i] = np.mean(y[x == x_mean[i]])
         y_std[i] = np.std(y[x == x_mean[i]])
@@ -116,9 +135,11 @@ def spearman(x, y):
 def Tim(k, a, b):
     return -a*np.log(k) + b
 
+
+# Function(s) describing model for bipartite graphs
 def Harry(k, a, b, c):
-    return -a*np.log(k) + b +c
-#
+    return -2*np.log(k*(1+b))/(a)+c
+
 
 # Function Descibing analytic relation with second degree
 #
@@ -127,10 +148,9 @@ def Harry(k, a, b, c):
 #
 #
 
-
-# Function to perform fit to analytic function
+# Function to perform fit to specified function using curve_fit
 def fitter(k,inv_c,function,to_print=False):
-    """Perform fit to specified function
+    """Perform fit to specified function using scipy curve_fit
     Parameters
     ----------
     k : array
@@ -154,9 +174,20 @@ def fitter(k,inv_c,function,to_print=False):
     """
     popt, pcov = optimize.curve_fit(function, k, inv_c)
     if to_print:
-        print("1/ln(z) fit :", popt[0],"+/-",np.sqrt(pcov[0][0]))
-        print("B fit :",popt[1],"+/-",np.sqrt(pcov[1][1]))
+        print("gradient fit :", popt[0],"+/-",np.sqrt(pcov[0][0]))
+        print("constant fit :",popt[1],"+/-",np.sqrt(pcov[1][1]))
     return popt, pcov #popt[0], np.sqrt(pcov[0][0]), popt[1], np.sqrt(pcov[1][1])
+
+# Function to perform fit to bipartite analytic function, for the simultaneuos fit
+# to both groups. Can do with both iminuit and scipy curve fit 
+
+
+
+
+
+
+
+
 
 # Function to perform chi square test on unaggregated data using standard deviation
 def red_chi_square(k, inv_c, function, popt, stats_dict):
@@ -186,18 +217,26 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
     new_inv_c = []
     new_k = []
     for i in range(len(inv_c)):
+        # Get sigma and count for given degree in array 
         sigma = stats_dict[k[i]][2]
         count = stats_dict[k[i]][3]
-        if sigma > 0.001 and count>1:
-            sigmas.append(sigma)
-            new_inv_c.append(inv_c[i])
-            new_k.append(k[i])
+        # Need to not use if sigma = 0 (possible for identical nodes)
+        if sigma > 0.001:
+            # if count > 1 add to list as standard deviation is not 0
+            if count>1:
+                # add to new lists
+                sigmas.append(sigma)
+                new_inv_c.append(inv_c[i])
+                new_k.append(k[i])
+    # perform chi square test
     sigmas = np.asarray(sigmas)
     new_inv_c = np.asarray(new_inv_c)
     new_k = np.asarray(new_k)
     expected_inv_c = function(new_k, *popt)
     chi = np.sum(((new_inv_c - expected_inv_c)**2)/(sigmas**2))
-    rchi = chi/(len(new_k)-2)
+    # get reduced chi square
+    f = len(popt)
+    rchi = chi/(len(new_k)-f)
     return rchi
 
 # Function to do all above for given graph
@@ -235,7 +274,10 @@ def process(g, function,to_print=False):
     rsp : float
         p-value"""
     k, c, inv_c, mean_k = GetKC(g)
-    popt, pcov = fitter(k, inv_c, function, to_print=to_print)
+    if function == Tim:
+        popt, pcov = fitter(k, inv_c, function, to_print=to_print)
+    if function == Harry:
+        popt, pcov = fitter2(k, inv_c, function, to_print=to_print)
     statistics_dict = aggregate_dict(k, inv_c)
     rchi = red_chi_square(k, inv_c, function, popt,statistics_dict)
     r, rp = pearson(k, c)
@@ -248,8 +290,9 @@ def process(g, function,to_print=False):
         print("Spearman p-value:", rsp)
     return k, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k
 
-# Function to generate BA, ER, Config-BA
-
+# Function to generate BA model
+# Here we specify an average degree to define the model
+# by detemining m. 
 def BA(n, av_deg):
     """Generate BA graph
     Parameters  
@@ -262,10 +305,11 @@ def BA(n, av_deg):
     -------     
     g : graph_tool graph
         Generated graph"""
-
+    # Determine 
     m = int(av_deg/2)
     g = generation.price_network(n, m, directed=False)
     return g
+
 
 def ER(n, av_deg):
     """Generate ER graph
@@ -310,7 +354,15 @@ def config_BA(n, av_deg):
     g = generation.random_rewire(g, model="configuration")
     return g
 '''
-# Function to generate Bipaerite graph
+# Function to generate BA Bipartite graph
+#
+#
+#----------TO BE ADDED----------
+#
+#
+#
+
+# Function to generate ER random bipartite graph
 #
 #
 #----------TO BE ADDED----------
@@ -319,8 +371,24 @@ def config_BA(n, av_deg):
 #
 
 
+# Function to generate watts & strogatz bipartite graph
+#
+#
+#----------TO BE ADDED----------
+#
+#
+#
+
+# Function to generate Config-BA bipartite graph
+#
+#
+#----------TO BE ADDED----------
+#
+#
+#
+
 # Function to load graph from Netzschleuder
-def load_graph(name):
+def load_graph(name, clean=True):
     """Load graph from pickle
     Parameters  
     ----------                  
@@ -331,6 +399,10 @@ def load_graph(name):
     g : graph_tool graph
         Loaded graph"""
     g = collection.ns[name]
+    if clean:
+        g = topology.extract_largest_component(g, directed=False, prune=True)
+        gt_stats.remove_parallel_edges(g)
+        gt_stats.remove_self_loops(g)
     return g
 
 def filter_num_verticies(names_df, num):
