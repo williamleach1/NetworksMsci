@@ -8,7 +8,7 @@ from Plotter import *
 from ProcessBase import *
 
 
-def run(gen_func, ns, av_deg, name,to_html=False,to_print=False,func=Tim):
+def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -35,14 +35,13 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False,func=Tim):
         plots = Plotter(name)
         for n in ns:
             g = gen_func(n, av_degree)
-            k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,func, 
-                                                                                                to_print=False)
+            k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,to_print=False)
             a = popt[0]
             b = popt[1]
             a_err = np.sqrt(pcov[0][0])
             b_err = np.sqrt(pcov[1][1])
             ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
-            plots.add_plot(ks,inv_c_mean,errs,label='N = '+ str(n),fitline=True,function=func,popt=[a,b])
+            plots.add_plot(ks,inv_c_mean,errs,label='N = '+ str(n),fitline=True,function=Tim,popt=[a,b])
             temp_df = pd.DataFrame({"Mean k": mean_k,"N": n, "1/ln(z)": a, "1/ln(z) err": a_err, "Beta": b, 
                             "Beta err": b_err, "rchi": rchi, "pearson r": r,
                             "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, index=[i])
@@ -65,8 +64,8 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False,func=Tim):
 # av_degree = [6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,
 #              44,46,48,50,52,54,56,58,60]
 
-ns = [1000,4000,7000,10000,13000,16000,19000,22000,25000]
-av_degree = [6,10,14,18,22,26,30,34,38,42,46,50,54,58,62,66,70]
+ns = [1000,4000,7000]#,10000,13000,16000,19000,22000,25000]
+av_degree = [6,10,14]#,18,22,26,30,34,38,42,46,50,54,58,62,66,70]
 names = ['BA','ER']#,'Config']
 MakeFolders(names, 'ArtificialUniNets')
 Zs_BA=[]
@@ -102,3 +101,8 @@ ax.set_xlabel('Mean k')
 ax.set_ylabel('N')
 ax.set_zlabel('Reduced Chi Squared')
 plt.show()
+
+
+
+
+

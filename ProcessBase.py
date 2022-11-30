@@ -12,6 +12,7 @@ from scipy import optimize, stats
 from tqdm import tqdm
 from iminuit import Minuit
 from iminuit.cost import LeastSquares
+from iminuit.util import describe
 # Function to find closeness and degree for graph_tool graph
 # remove values if degree 0
 
@@ -46,10 +47,36 @@ def GetKC(g):
 
 # Function to get K and inverse c for bipartite graph
 # Need to split into two groups
+def GetKC_bipartite(g):
+    k, c, inv_c, mean_k = GetKC(g)
+    # get the bipartite sets
+    test, partition = topology.is_bipartite(g, partition=True)
+    print(test)
+    print(partition.get_array())
+    # split into groups
+    partition_array = partition.get_array()
+    # find number of 1s and 0s
+    num_1s = 0
+    num_0s = 0
+    for i in partition_array:
+        if i == 1:
+            num_1s += 1
+        else:
+            num_0s += 1
+    
+    print('breakdown: ',num_1s, num_0s)
 
+    # split into two groups
+    k_1 = k[partition_array == 0]
+    c_1 = c[partition_array == 0]
+    inv_c_1 = inv_c[partition_array == 0]
+    mean_k_1 = np.mean(k_1)
 
-
-
+    k_2 = k[partition_array == 1]
+    c_2 = c[partition_array == 1]
+    inv_c_2 = inv_c[partition_array == 1]
+    mean_k_2 = np.mean(k_2)
+    return k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2
 
 
 # Function to get second degree
@@ -109,6 +136,7 @@ def pearson(x, y):
         Pearson correlation coefficient
     p : float
         p-value"""
+    # quick scipy pearson
     r, p = stats.pearsonr(x, y)
     return r, p
 
@@ -127,6 +155,7 @@ def spearman(x, y):
         Spearman correlation coefficient
     p : float
         p-value"""
+    # quick scipy spearman
     r, p = stats.spearmanr(x, y)
     return r, p
 
@@ -137,8 +166,12 @@ def Tim(k, a, b):
 
 
 # Function(s) describing model for bipartite graphs
-def Harry(k, a, b, c):
-    return -2*np.log(k*(1+b))/(a)+c
+def Harry_1(k, a, b, alpha):
+    return -2*np.log(k*(1+np.exp(b)))/(a+b)+alpha
+
+
+def Harry_2(k, a, b, alpha):
+    return -2*np.log(k*(1+np.exp(a)))/(a+b)+alpha
 
 
 # Function Descibing analytic relation with second degree
@@ -181,12 +214,90 @@ def fitter(k,inv_c,function,to_print=False):
 # Function to perform fit to bipartite analytic function, for the simultaneuos fit
 # to both groups. Can do with both iminuit and scipy curve fit 
 
+def fitter_test_dual(k1,k2,inv_c1,inv_c2,funcA,funcB,to_print=False):
+    """Perform fit to bipartite analytic function, for the simultaneuos fit
+    to both groups. Can do with both iminuit and scipy curve fit, this one is in iminuit
+    Parameters
+    ----------
+    k1 : array
+        Degree of each node in group 1
+    k2 : array
+        Degree of each node in group 2
+    inv_c1 : array
+        Inverse Closeness of each node in group 1
+    inv_c2 : array
+        Inverse Closeness of each node in group 2
+    funcA : function
+        Function to fit to group 1
+    funcB : function
+        Function to fit to group 2
+    to_print : bool
+        Print results
+    Returns
+    -------
+    popt : array
+        a, b, alpha
+    errs : array
+        a error, b error, alpha error
+    """
+    # Have to define errors. This is janky, but it works temporarily
+    err_est_1 = 0.01#np.sqrt(inv_c1)
+    err_est_2 = 0.01#np.sqrt(inv_c2)
+    combined_LS = LeastSquares(k1,inv_c1,err_est_1, funcA) + LeastSquares(k2,inv_c2,err_est_2, funcB)
+    print(f"{describe(combined_LS)=}")
+    m = Minuit(combined_LS, a=1, b=1,alpha=1)
+    m.migrad()
+    if to_print:
+        print(m.values)
+    popt = [m.values['a'], m.values['b'], m.values['alpha']]
+    errs = [m.errors['a'], m.errors['b'], m.errors['alpha']]
+    return popt, errs
+
+def fitter_test_dual_curve_fit(k1,k2,inv_c1,inv_c2,funcA,funcB,to_print=False):
+    """Perform fit to bipartite analytic function, for the simultaneuos fit
+    to both groups. Can do with both iminuit and scipy curve fit, this one is in iminuit
+    Parameters
+    ----------
+    k1 : array
+        Degree of each node in group 1
+    k2 : array
+        Degree of each node in group 2
+    inv_c1 : array
+        Inverse Closeness of each node in group 1
+    inv_c2 : array
+        Inverse Closeness of each node in group 2
+    funcA : function
+        Function to fit to group 1
+    funcB : function
+        Function to fit to group 2
+    to_print : bool
+        Print results
+    Returns
+    -------
+    popt : array
+        a, b, alpha
+    errs : array
+        a error, b error, alpha error
+    """
+    k = np.append(k1,k2)
+    num_k1 = len(k1)
+    num_k2 = len(k2)
+
+    inv_c = np.append(inv_c1,inv_c2)
+
+    def combo_func(k,a,b,alpha):
+        data1 = funcA(k[:num_k1],a,b,alpha)
+        data2 = funcB(k[num_k1:],a,b,alpha)
+        return np.append(data1,data2)
+    initial_guess = [1,1,1]
 
 
+    popt, pcov = optimize.curve_fit(combo_func, k, inv_c, p0=initial_guess)
+    if to_print:
+        print(popt)
 
-
-
-
+    errs = np.sqrt(np.diag(pcov))
+    return popt, errs
 
 
 # Function to perform chi square test on unaggregated data using standard deviation
@@ -241,7 +352,7 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
 
 # Function to do all above for given graph
 
-def process(g, function,to_print=False):
+def process(g,to_print=False):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -274,12 +385,10 @@ def process(g, function,to_print=False):
     rsp : float
         p-value"""
     k, c, inv_c, mean_k = GetKC(g)
-    if function == Tim:
-        popt, pcov = fitter(k, inv_c, function, to_print=to_print)
-    if function == Harry:
-        popt, pcov = fitter2(k, inv_c, function, to_print=to_print)
+    function = Tim
+    popt, pcov = fitter(k, inv_c, function, to_print=to_print)
     statistics_dict = aggregate_dict(k, inv_c)
-    rchi = red_chi_square(k, inv_c, function, popt,statistics_dict)
+    rchi = red_chi_square(k, inv_c,function, popt,statistics_dict)
     r, rp = pearson(k, c)
     rs, rsp = spearman(k, c)
     if to_print:
@@ -289,6 +398,59 @@ def process(g, function,to_print=False):
         print("Spearman correlation:", rs)
         print("Spearman p-value:", rsp)
     return k, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k
+
+# Function to process Bipartite graphs
+def process_bipartite(g,to_print=False):
+    # Get degree and closeness for each node in two groups
+    k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2 = GetKC_bipartite(g)
+    
+    # Fit to both groups - can use either scipy curve fit or iminuit
+    popt, errs = fitter_test_dual_curve_fit(k_1,k_2,inv_c_1,inv_c_2, Harry_1, Harry_2, to_print=to_print)
+    #popt1, errs1 = fitter_test_dual(k_1,k_2,inv_c_1,inv_c_2, Harry_1, Harry_2, to_print=to_print)
+    a ,b ,alpha = popt
+
+    # Get statistics for each degree
+    statistics_dict_1 = aggregate_dict(k_1, inv_c_1)
+    statistics_dict_2 = aggregate_dict(k_2, inv_c_2)
+
+    # Perform chi square test on each group
+    rchi_1 = red_chi_square(k_1, inv_c_1, Harry_1, popt,statistics_dict_1)
+    rchi_2 = red_chi_square(k_2, inv_c_2, Harry_2, popt,statistics_dict_2)
+
+    # Perform correlation tests
+    r1, rp1 = pearson(k_1, c_1)
+    r2, rp2 = pearson(k_2, c_2)
+
+    rs1, rsp1 = spearman(k_1, c_1)
+    rs2, rsp2 = spearman(k_2, c_2)
+
+    # Print results
+    if to_print:
+        print("Group 1 Reduced chi square:", rchi_1)
+        print("Group 1 Pearson correlation:", r1)
+        print("Group 1 Pearson p-value:", rp1)
+        print("Group 1 Spearman correlation:", rs1)
+        print("Group 1 Spearman p-value:", rsp1)
+        print("Group 2 Reduced chi square:", rchi_2)
+        print("Group 2 Pearson correlation:", r2)
+        print("Group 2 Pearson p-value:", rp2)
+        print("Group 2 Spearman correlation:", rs2)
+        print("Group 2 Spearman p-value:", rsp2)
+        print("a:", a)
+        print("a error:", errs[0])
+        print("b:", b)
+        print("b error:", errs[1])
+        print("alpha:", alpha)
+        print("alpha error:", errs[2])
+
+    # Return results
+    output = [k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2, 
+                rchi_1, rchi_2, r1, r2, rs1, rs2, rp1, rp2, rsp1, rsp2, 
+                popt, errs, statistics_dict_1, statistics_dict_2]
+
+    return output
+
+
 
 # Function to generate BA model
 # Here we specify an average degree to define the model

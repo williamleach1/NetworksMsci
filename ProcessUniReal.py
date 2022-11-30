@@ -7,7 +7,7 @@ warnings.filterwarnings("error")
 
 
 start = time.time()
-def run_real(names, to_html=False, to_print=False,func=Tim):
+def run_real(names, to_html=False, to_print=False):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -28,27 +28,26 @@ def run_real(names, to_html=False, to_print=False,func=Tim):
         # Using try to catch errors
         try:
             g = load_graph(names[i])
-            k, c,popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k= process(g,func, 
-                                                                                    to_print=False)
+            k, c,popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k= process(g, to_print=False)
             a = popt[0]
             b = popt[1]
             a_err = np.sqrt(pcov[0][0])
             b_err = np.sqrt(pcov[1][1])
             plots = Plotter(names[i])
             ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
-            plots.add_plot(ks,inv_c_mean,yerr=errs,fitline=True,function=func,popt=[a,b])
+            plots.add_plot(ks,inv_c_mean,yerr=errs,fitline=True,function=Tim,popt=[a,b])
             save_name = 'Output/RealUniNets/' + names[i] + '/K_Inv_C_Clean.png'
             plots.plot(save=True,savename=save_name)
 
             # now for unaggragated data plots
             plots_unag = Plotter(names[i])
-            plots_unag.add_plot(k,1/c,fitline=True,function=func,popt=[a,b])
+            plots_unag.add_plot(k,1/c,fitline=True,function=Tim,popt=[a,b])
             save_name2 = 'Output/RealUniNets/' + names[i] + '/K_Inv_C_unagg_clean.png'
             plots_unag.plot(save=True,savename=save_name2)
 
             # Now for collapse plot
             plots_collapse1 = Plotter(names[i])
-            inv_c_pred = func(ks,a,b)
+            inv_c_pred = Tim(ks,a,b)
             plots_collapse1.add_plot(ks,inv_c_mean/inv_c_pred,yerr=errs/inv_c_pred)
             save_name3 = 'Output/RealUniNets/' + names[i] + '/K_Inv_C_collapse1_clean.png'
             plots_collapse1.plot(save=True,savename=save_name3)

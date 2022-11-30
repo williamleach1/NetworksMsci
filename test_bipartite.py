@@ -192,6 +192,8 @@ def process(g,to_print=False):
 
     return output
 
+    
+
 Bipartite_df = pd.read_pickle('Data/bipartite.pkl')
 upper_node_limit = 50000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
