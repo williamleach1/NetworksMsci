@@ -37,15 +37,6 @@ class Plotter:
         self.legend = False
         self.legend_loc = 'best'
         self.legend_title = 'Series:'
-        self.params = {'font.size' : 16,
-                        'axes.labelsize':16,
-                        'legend.fontsize': 14,
-                        'xtick.labelsize': 14,
-                        'ytick.labelsize': 18,
-                        'axes.titlesize': 16,
-                        'figure.titlesize': 16,
-                        'figure.figsize': (12, 9),}
-        plt.rcParams.update(self.params)
         self.fitline = False
     def add_plot(self, x, y, yerr=None, label='Data', fitline=False, function=None, popt=None):
         self.x.append(x)
@@ -59,6 +50,7 @@ class Plotter:
             self.fitlables.append(label+' fit')
         if yerr is not None:
             plt.errorbar(x, y, yerr=yerr, fmt = '.',markersize = 5,capsize=2,)
+    # Options to change for non default plots (collapses etc)
     def change_sup_title(self, title):
         self.suptitle = title
     def change_title(self, title):
@@ -71,6 +63,7 @@ class Plotter:
         self.x_lim = lim
     def change_y_lim(self, lim):
         self.y_lim = lim
+    # plot graphs and fitlines
     def plot(self,scale='log',legend=False,save=False, savename=None):
         for i in range(len(self.x)):
             plt.plot(self.x[i], self.y[i], label=self.labels[i],marker= '.', linestyle='None')

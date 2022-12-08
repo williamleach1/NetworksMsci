@@ -7,6 +7,7 @@ import numpy as np
 # Downloading from netzschleuder API.
 # It is slow so this code saves in messy df pkl format
 #         if it has not been run before.
+
 if os.path.exists("Input/messydata.pkl")==False:
     os.makedirs("Input")
     url = "https://networks.skewed.de/api/nets?full=True"
@@ -22,8 +23,10 @@ for c in range(len(df.axes[1])):
     c_nets = s_c.loc['nets'] # load sub-network list
     folder_name = s_c.name # get folder name for network
     full_dict = s_c.loc['analyses'] # get dictionary of features
+
     if len(c_nets)==1: # if no sub networks
         finaldf = pd.concat((finaldf,s_c),axis=1)
+
     if len(c_nets)>1: # if there are sub networks
         if len(c_nets)<100: # speed up code in testing
             for n in range(len(c_nets)): # for each sub network
@@ -41,6 +44,9 @@ for c in range(len(df.axes[1])):
                     # add to dataframe
                     finaldf = pd.concat((finaldf,temp_s_c),axis=1)
                 else: # handling failure if type not dictionary
+                    # Should really do this with try-except
+                    # But this is mostly for testing to ensure we have extracted
+                    # a dictionary type.
                     print("--------------------------")
                     print("full name: ",full_name)
                     print("full_dict",full_dict)
@@ -72,9 +78,9 @@ print(counts)
 join_df = join_df.transpose()
 for tag in unique_tags:
     col_name = "Tag-"+tag
-    join_df[col_name] = [ tag in tt for tt in join_df['tags'] ]
+    join_df[col_name] = [ tag in tags for tags in join_df['tags'] ]
 
-# Filter out multigraph.
+# Filter out multigraph. (might add these back in later)
 filtered_df = join_df.loc[join_df['Tag-Multigraph']==False,]
 # Filter out directed graphs.
 filtered_df = filtered_df.loc[filtered_df['is_directed']==False,]
@@ -93,6 +99,7 @@ print(filtered_df)
 
 unipartite_df = unipartite_df.transpose()
 print(unipartite_df)
+
 # Save unpartite and bipartite as csv
 os.makedirs('Data', exist_ok=True)  
 unipartite_df.to_csv('Data/unipartite.csv')  
