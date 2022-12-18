@@ -40,13 +40,21 @@ ProcessUniReal.py
 - Runs commands to plot k vs 1/c and fit line and save
 - Saves dataframe with stats as html in Output folder
 
+ProcessBipartiteReal.py
+- Process real bipartite networks
+- Takes input as list of networks neames to process
+- Processes dual constrained fit and statistics for each real network
+- Runs commands to plot k vs 1/c and fit lines and save
+- Saves dataframe with stats as html in Output folder
+
+
 
 TO DO:
 ------------------------------------------------------------------------
 TO DO - Base:
 * config-BA model needs adding and analysing.
 * Generate visual of each network?
-* Data-collapse needs adding.
+* Data-collapse needs adding. 
 * fix reduced chi-squared - DONE - NEED TO VERIFY - slight difference to E&C
 * Handling repeats for artificial - is it neccesary?
 * Process networks where N>300000
@@ -55,7 +63,10 @@ TO DO - Base:
 TO DO - Bipartite:
 * New fit-func for bipartite.
 * New closeness finding implementation for bipartite? - think not needed but depends on normalisation
-* Find and implement bipartite artificial networks
+* Find, implement, and process bipartite artificial networks
+    * Erdos-Renyi
+    * Barabasi-Albert - DONE
+    * Configuration
 * Process artificial and real bipartite networks - get statistics and fits
 * Plot results - k vs 1/c, data collapse
 * Compare average (and standard deviation?) length of shortest path predicted to actual value

@@ -7,6 +7,7 @@ from iminuit import Minuit
 from iminuit.cost import LeastSquares
 from iminuit.util import describe
 from scipy.optimize import curve_fit
+from networkx.algorithms import bipartite
 params =    {'font.size' : 16,
             'axes.labelsize':16,
             'legend.fontsize': 14,
@@ -192,7 +193,7 @@ def process(g,to_print=False):
 
     return output
 
-    
+
 
 Bipartite_df = pd.read_pickle('Data/bipartite.pkl')
 upper_node_limit = 50000 # takes around 1 minute per run with 50000
@@ -258,7 +259,7 @@ for i in range(len(bipartite_network_names)):
     plt.title("a = %2f, b = %2f, alpha = %2f, rchi1=%2f, rchi2=%2f" % (popt[0], popt[1], popt[2], rchi_1, rchi_2))
     
     folder = 'Output/RealBipartiteNets/'+bipartite_network_names[i]+'/'
-
+    plt.show()
     plt.savefig('plots/'+str(np.round(rchi_1,3))+'_'+str(np.round(rchi_2,3))+'inv_c_vs_k.png')
     plt.savefig(folder+'inv_c_vs_k.png')
     df = pd.DataFrame({'mean k 1:': [mean_k_1], 'mean k 2:': [mean_k_2], 'rchi 1:': [rchi_1], 
@@ -267,10 +268,3 @@ for i in range(len(bipartite_network_names)):
                         'rsp 2:': [rsp2], 'a:': [popt[0]], 'a error:': [errs[0]], 'b:': [popt[1]], 
                         'b error:': [errs[1]], 'alpha:': [popt[2]], 'alpha error:': [errs[2]]})
     df.to_html(folder+'stats.html')
-    
-
-
-
-
-
-

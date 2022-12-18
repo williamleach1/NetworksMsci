@@ -13,6 +13,12 @@ from tqdm import tqdm
 from iminuit import Minuit
 from iminuit.cost import LeastSquares
 from iminuit.util import describe
+from numba import njit
+import itertools
+import graph_tool.all as gt
+import networkx as nx
+from networkx.algorithms import bipartite
+
 # Function to find closeness and degree for graph_tool graph
 # remove values if degree 0
 
@@ -48,6 +54,29 @@ def GetKC(g):
 # Function to get K and inverse c for bipartite graph
 # Need to split into two groups
 def GetKC_bipartite(g):
+    """Get closeness and degree for bipartite graph_tool graph
+    Parameters  
+    ----------                  
+    g : graph_tool graph
+        Graph to be analyzed  
+    Returns
+    -------     
+    k_1 : array
+        Degree of each node in group 1
+    c_1 : array
+        Closeness of each node in group 1
+    inv_c_1 : array
+        Inverse Closeness of each node in group 1
+    k_2 : array
+        Degree of each node in group 2
+    c_2 : array
+        Closeness of each node in group 2
+    inv_c_2 : array
+        Inverse Closeness of each node in group 2
+    mean_k_1 : float
+        Mean degree of group 1
+    mean_k_2 : float
+        Mean degree of group 2"""
     k, c, inv_c, mean_k = GetKC(g)
     # get the bipartite sets
     test, partition = topology.is_bipartite(g, partition=True)
@@ -401,6 +430,17 @@ def process(g,to_print=False):
 
 # Function to process Bipartite graphs
 def process_bipartite(g,to_print=False):
+    """Perform all analysis on bipartite graph
+    Parameters
+    ----------
+    g : graph_tool graph
+        Graph to be analyzed
+    Returns
+    -------
+    output : list
+        List of all outputs from processing
+    """
+
     # Get degree and closeness for each node in two groups
     k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2 = GetKC_bipartite(g)
     
@@ -516,21 +556,94 @@ def config_BA(n, av_deg):
     g = generation.random_rewire(g, model="configuration")
     return g
 '''
-# Function to generate BA Bipartite graph
-#
-#
-#----------TO BE ADDED----------
-#
-#
-#
+
+#This makes an initial, complete bipartite graph ready to grow (preferentially)
+#Every even node will be connected to every odd node.
+#Probably best to choose a small n (initial number of nodes).
+def bi(n):
+
+    lis=[]
+    for i in range(n):
+        lis.append(i)
+
+    edges = list(itertools.combinations(lis, 2))
+    for e in edges:
+        if (e[0]+e[1]) %2 == 0:
+            edges.remove(e)
+   
+    deg=[]
+    for i in range(n):
+        deg_count=0
+        for e in edges:
+            if e[0]==i or e[1] == i:
+                deg_count+=1
+               
+        deg.append(deg_count)
+   
+    weight=np.array(edges).flatten().tolist()
+   
+    return weight, n, edges
+
+
+#BA preferential growth model for bipartite
+#n_start is the size of the initialised complete bipartite graph
+#m_1,_2 are the two different 'wedge' numbers for each type of node
+#n is the number of nodes to be added preferentially
+#@njit
+def add(n_start,m_1,m_2,n):
+   
+    weighting,n_initial,edge_list=bi(n_start)
+    #weighting=w
+    number=n_initial-1
+    #edge_list=edge
+    for x in range(n):
+        number+=1
+        odd = [num for num in weighting if num % 2 != 0]
+        even=[num for num in weighting if num % 2 == 0]
+       
+        if (number + 1) % 2 == 0:
+            weight=even
+            m=m_1
+           
+        else:
+            weight = odd
+            m=m_2
+           
+        for i in range(m):
+            index=np.random.randint(0,len(weight))
+            attach=weight[index]
+            weighting.append(attach)
+            weighting.append(number)
+            weight.append(attach)
+            edge_list.append((number,attach))
+   
+    deg=np.bincount(weighting)
+   
+    return deg,edge_list
+   
+#Returns edge list (to put into graph tool) and the degree of each node in order
+# I.e. from 0 to n-1  
+# Now wrapping this in a function to make it load graph_tool graphs
+def BipartiteBA(m_1,m_2,n, n_start=10):
+    deg,edge_list=add(n_start,m_1,m_2,n)
+   
+    g = Graph()
+    g.set_directed(False)
+    g.add_edge_list(edge_list)
+    return g
+
 
 # Function to generate ER random bipartite graph
-#
-#
-#----------TO BE ADDED----------
-#
-#
-#
+def BipartiteER(n1, n2, p):
+    g = bipartite.random_graph(n1, n2,p, directed=False)
+
+    nx.write_edgelist(g, "bipartite.txt", data=False)
+
+    g = gt.load_graph_from_csv("bipartite.txt", directed=False, csv_options={"delimiter": " "})
+
+    os.remove("bipartite.txt")
+    
+    return g
 
 
 # Function to generate watts & strogatz bipartite graph
@@ -548,6 +661,25 @@ def config_BA(n, av_deg):
 #
 #
 #
+# Function to clean graph
+
+def clean_graph(g):
+    """Clean graph
+    Parameters  
+    ----------                  
+    g : graph_tool graph
+        Graph to clean
+    Returns
+    -------     
+    g : graph_tool graph
+        Cleaned graph"""
+    g = topology.extract_largest_component(g, directed=False, prune=True)
+    gt_stats.remove_parallel_edges(g)
+    gt_stats.remove_self_loops(g)
+    return g
+
+
+
 
 # Function to load graph from Netzschleuder
 def load_graph(name, clean=True):

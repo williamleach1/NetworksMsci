@@ -35,6 +35,7 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
         plots = Plotter(name)
         for n in ns:
             g = gen_func(n, av_degree)
+            g = clean_graph(g)
             k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,to_print=False)
             a = popt[0]
             b = popt[1]
@@ -70,7 +71,9 @@ names = ['BA','ER']#,'Config']
 MakeFolders(names, 'ArtificialUniNets')
 Zs_BA=[]
 Zs_ER=[]
-for i in range(1):
+repeats = 1
+
+for i in range(repeats):
     dfs_BA, rchi_df = run(BA, ns, av_degree, 'BA',to_html=True, to_print=True)
     dfs_ER, rchi_df2 = run(ER, ns, av_degree, 'ER',to_html=True, to_print=True)
     #make contour plot of reduced chi squared
