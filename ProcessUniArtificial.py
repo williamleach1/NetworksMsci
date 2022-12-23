@@ -7,6 +7,8 @@ from matplotlib import cm
 from Plotter import *
 from ProcessBase import *
 
+from datetime import datetime
+import csv
 
 def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
     """Perform all analysis on graph
@@ -49,6 +51,22 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
             final_df = pd.concat([final_df, temp_df])
             rchi_df.loc[n,av_degree] = rchi
             i+=1
+
+            os.makedirs('Output/RchiUniArtificial', exist_ok=True)
+            # save reduced chi squared to csv file for each graph type
+            if name == 'BA':
+                row = [datetime.now(),n,av_degree,rchi]
+                with open('Output/RchiUniArtificial/rchisBA.csv','a') as csvFile:
+                    writer = csv.writer(csvFile)
+                    writer.writerow(row)
+                csvFile.close()
+            elif name == 'ER':
+                row = [datetime.now(),n,av_degree,rchi]
+                with open('Output/RchiUniArtificial/rchisER.csv','a') as csvFile:
+                    writer = csv.writer(csvFile)
+                    writer.writerow(row)
+                csvFile.close()
+
         save_name = 'Output/ArtificialUniNets/' + name + '/K_Inv_C_'+str(av_degree)+'.png'
         plots.plot(legend=True,save=True,savename=save_name)
         dfs = pd.concat([dfs, final_df])
@@ -59,6 +77,9 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
         print(name+ ' done')
         print(dfs)
     return dfs, rchi_df
+
+
+
 
 # ns = [1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,11000,
 #         12000,13000,14000,15000,16000,17000,18000,19000,20000]

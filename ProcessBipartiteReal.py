@@ -104,7 +104,8 @@ def run_real(names,to_html=False, to_print=False):
                                 'rchi 2:': [rchi_2], 'r 1:': [r1], 'r 2:': [r2], 'rs 1:': [rs1], 
                                 'rs 2:': [rs2], 'rp 1:': [rp1], 'rp 2:': [rp2], 'rsp 1:': [rsp1],
                                 'rsp 2:': [rsp2], 'a:': [popt[0]], 'a error:': [errs[0]], 'b:': [popt[1]], 
-                                'b error:': [errs[1]], 'alpha:': [popt[2]], 'alpha error:': [errs[2]]})
+                                'b error:': [errs[1]], 'alpha:': [popt[2]], 'alpha error:': [errs[2]]},
+                                index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
         # Need to handle errors otherwise code stops. This is not best practice
         # to simply skip over error but we display failed networks at the end.
@@ -141,12 +142,26 @@ def run_real(names,to_html=False, to_print=False):
         print(final_df)
     return final_df
 
+save_name_df = 'Output/RealBipartiteNets/RealBipartiteNets.pkl'
+
+# Load in already done dataframe if it exists
+if os.path.exists(save_name_df):
+    df_already = pd.read_pickle(save_name_df)
+    already_done = df_already.index.values.tolist()
+else:
+    already_done = []
+
+print(already_done)    
+
+
 # Load in unipartite and run for each real networks
 # Need to get column names for each network from the dataframe
 # Need to do after running get_networks.py
 Bipartite_df = pd.read_pickle('Data/bipartite.pkl')
 upper_node_limit = 50000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
+
+
 Bipartite_df = filter_num_verticies(Bipartite_df, upper_node_limit)
 bipartite_network_names = Bipartite_df.columns.values.tolist()
 print(len(bipartite_network_names))
@@ -154,7 +169,19 @@ print(len(bipartite_network_names))
 # Create folder for each network group (if group) and second folder for each network
 MakeFolders(bipartite_network_names,'RealBipartiteNets')
 # Run analysis on each network
+
+bipartite_network_names = [x for x in bipartite_network_names if x not in already_done]
+
 df = run_real(bipartite_network_names, to_html=True, to_print=True)
+
+# Save dataframe to pickle if it doesn't already exist
+if os.path.exists(save_name_df):
+    df2 = pd.read_pickle(save_name_df)
+    df = pd.concat([df, df2])
+    df.to_pickle(save_name_df)
+else:
+    df.to_pickle(save_name_df)
+
 
 # Measure time taken to run to help predict for larger networks
 # Takes around 1-2 minute per run with 50000 upper node limit

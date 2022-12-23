@@ -53,7 +53,7 @@ def GetKC(g):
 
 # Function to get K and inverse c for bipartite graph
 # Need to split into two groups
-def GetKC_bipartite(g):
+def GetKC_bipartite(g, to_print=False):
     """Get closeness and degree for bipartite graph_tool graph
     Parameters  
     ----------                  
@@ -80,8 +80,7 @@ def GetKC_bipartite(g):
     k, c, inv_c, mean_k = GetKC(g)
     # get the bipartite sets
     test, partition = topology.is_bipartite(g, partition=True)
-    print(test)
-    print(partition.get_array())
+
     # split into groups
     partition_array = partition.get_array()
     # find number of 1s and 0s
@@ -93,7 +92,10 @@ def GetKC_bipartite(g):
         else:
             num_0s += 1
     
-    print('breakdown: ',num_1s, num_0s)
+    if to_print:
+        print(test)
+        #print(partition.get_array())
+        print('breakdown: ',num_1s, num_0s)
 
     # split into two groups
     k_1 = k[partition_array == 0]
@@ -111,7 +113,7 @@ def GetKC_bipartite(g):
 # Function to get second degree
 #
 #
-#--------TO BE ADDED----------------
+#--------(Done)TO BE ADDED----------------
 #
 #
 
@@ -641,6 +643,7 @@ def BipartiteER(n1, n2, p):
 
     g = gt.load_graph_from_csv("bipartite.txt", directed=False, csv_options={"delimiter": " "})
 
+    os.close("bipartite.txt")
     os.remove("bipartite.txt")
     
     return g

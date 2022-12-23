@@ -6,6 +6,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 import time
 import ProcessBase as pb
+
 class VisitorSecondDegree(gt.BFSVisitor):
 
     def __init__(self, pred, dist):

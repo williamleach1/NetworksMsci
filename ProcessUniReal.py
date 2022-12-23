@@ -56,6 +56,7 @@ def run_real(names, to_html=False, to_print=False):
                                 "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, 
                                 index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
+                
         # Need to handle errors otherwise code stops. This is not best practice
         # to simply skip over erro
         except OSError:
@@ -88,14 +89,29 @@ def run_real(names, to_html=False, to_print=False):
         print(final_df)
     return final_df
 
+
+# Load in already done dataframe if it exists
+if os.path.exists('Output/RealUniNets/RealUniNets.pkl'):
+    df_already = pd.read_pickle('Output/RealUniNets/RealUniNets.pkl')
+    already_done = df_already.index.values.tolist()
+else:
+    already_done = []
+
+print(already_done)    
+
 # Load in unipartite and run for each real networks
 # Need to get column names for each network from the dataframe
 # Need to do after running get_networks.py
 Unipartite_df = pd.read_pickle('Data/unipartite.pkl')
 upper_node_limit = 50000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
+
 unipartite_df = filter_num_verticies(Unipartite_df, upper_node_limit)
 uni_network_names = unipartite_df.columns.values.tolist()
+
+# Remove networks already done
+uni_network_names = [x for x in uni_network_names if x not in already_done]
+
 print(len(uni_network_names))
 # Generate file system in /Output with separate folders for each network group
 # Create folder for each network group (if group) and second folder for each network
@@ -103,9 +119,14 @@ MakeFolders(uni_network_names,'RealUniNets')
 # Run analysis on each network
 df = run_real(uni_network_names, to_html=True, to_print=True)
 
-# Measure time taken to run to help predict for larger networks
-# Takes around 1-2 minute per run with 50000 upper node limit
-# Takes around 40 minutes - 1 hour per run with 200000 upper node limit
-# Takes around 7 hours with 500000 upper node limit
+# Save dataframe to pickle if does not exist
+# If exists, append to existing dataframe
+if os.path.exists('Output/RealUniNets/RealUniNets.pkl'):
+    df2 = pd.read_pickle('Output/RealUniNets/RealUniNets.pkl')
+    df = pd.concat([df, df2])
+    df.to_pickle('Output/RealUniNets/RealUniNets.pkl')
+else:
+    df.to_pickle('Output/RealUniNets/RealUniNets.pkl')
+
 end = time.time()
 print('Time taken: ', end-start)

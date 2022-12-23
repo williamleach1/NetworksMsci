@@ -8,15 +8,15 @@ get_networks.py
 - It produces two data files for Unipartite and Bipartite graphs
 - To be used as reference to download with graph_tool later
 - Dataframe produced is saved in Data folder
-- Contains useful information about the networks
+- Contains useful information about the networks, will be apended to results later
 
 ProcessBase.py
 - Base functions for processing networks
 - Functions to load real netorks (given graph_tool name)
-- Functions to generate varied artificial networks (currently only ER and BA)
+- Functions to generate varied artificial networks
 - Statisitics - pearson, spearman, reduced chi2, best fit
-- Contains functions to fit for (currenty just unipartite but bipartite and second degree to be added)
-- Contains functions to find degree and closeness and find statistics
+- Contains functions to fit for unipartite and bipartite networks
+- Contains functions to find degree and closeness and find statistics for unipartite and bipartite networks
 - Functions to save dataframs as html
 - Function to generate file management tree
 
@@ -39,6 +39,8 @@ ProcessUniReal.py
 - Processes fit and statistics for each real network
 - Runs commands to plot k vs 1/c and fit line and save
 - Saves dataframe with stats as html in Output folder
+- Only runs if not already processed
+- Saved in Output folder
 
 ProcessBipartiteReal.py
 - Process real bipartite networks
@@ -47,45 +49,50 @@ ProcessBipartiteReal.py
 - Runs commands to plot k vs 1/c and fit lines and save
 - Saves dataframe with stats as html in Output folder
 
-
-
 TO DO:
 ------------------------------------------------------------------------
 TO DO - Base:
 * config-BA model needs adding and analysing.
-* Generate visual of each network?
 * Data-collapse needs adding. 
-* fix reduced chi-squared - DONE - NEED TO VERIFY - slight difference to E&C
-* Handling repeats for artificial - is it neccesary?
 * Process networks where N>300000
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
+* Compare beta(fit) to predicited value by z_fit
 
 TO DO - Bipartite:
-* New fit-func for bipartite.
-* New closeness finding implementation for bipartite? - think not needed but depends on normalisation
-* Find, implement, and process bipartite artificial networks
-    * Erdos-Renyi
-    * Barabasi-Albert - DONE
-    * Configuration
-* Process artificial and real bipartite networks - get statistics and fits
-* Plot results - k vs 1/c, data collapse
+* Find, implement, and process config-BA-bipartite model
+* Plot data collapse
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
+* Compare alpha fit to predicted by value of z_a(fit) and z_b(fit)
 
 TO DO - Second Degree vs Closeness:
-* New fit-func for second degree.
+* New fit-func for second degree. ----- IMPORTANT
 * New second degree (and closeness) finding function for
     second degree vs closeness.
 * Process artificial and real world unipartite networks for second
     degree vs closeness.
 * Plot results - k2 vs 1/c, data collapse
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
+* Compare gamma fit to predicted by value of z_(fit)
 
-Extensions and Investiagtions (side quests):
+TO DO - global network statistics:
+* quantify how well the fit function fits for real networks (proportion)
+* Look at correlation between goodness of fit and other network statistics (average degree, average path length, clustering coefficient, small-world coefficint, tree-ness, number loops, assortivity, etc.)
+* Potential machine learning to predict goodness of fit from network statistics - could be useful for predicting network structure from network statistics
+
+TO DO - Relation breakdown investigation:
+* Test octopus (or star) to see if network structure causes fit to be worse
+* Test other models with large scale (and well studied network structure) to see if fit is worse
+
+TO DO - Investigating assumptions (constant branching ratio, similarities of branches, hard cut-off)):
 * Investigate Branching ratio numerically, compare to average found in fit.
+    * Function for this is started
 * Justify if constant branching ratio is a good assumption
 * Justify if similaities of branches is good assumption and conditions for this
 * Investigate exponential growth in nodes reached when traversing rooted tree
 * Investigate Hard-Cut off numerically
+
+TO DO - 
+
 
 Installing graph-tool
 =====================
@@ -98,10 +105,12 @@ Installing graph-tool
     - matplotlib
     - requests
     - tqdm (for progress bar)
-    - Some other packages may be needed its good to check by intsalling ipython as well
-
-
-Harry here
+    - multiprocessing
+    - pandas
+    - scipy
+    - seaborn
+    - ipython
+    - networkx
 
 
     

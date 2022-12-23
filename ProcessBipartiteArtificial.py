@@ -16,7 +16,8 @@ params =    {'font.size' : 16,
 plt.rcParams.update(params)
 
 start = time.time()
-def run_real(gen_func,all_args=[],args_mean = [],to_html=False, to_print=False):
+
+def run_real(gen_func, name, all_args=[], args_mean = [], to_html=False, to_print=False):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -96,12 +97,20 @@ def run_real(gen_func,all_args=[],args_mean = [],to_html=False, to_print=False):
         plt.title("a = %2f, b = %2f, alpha = %2f, rchi1=%2f, rchi2=%2f" % (popt[0], popt[1], popt[2], rchi_1, rchi_2))
         
         # Save plot
-        #folder = 'Output/RealBipartiteNets/'+bipartite_network_names[i]+'/'
+        # alternate args_mean and args
 
-        # Also save in plots folder (gets messy but easy to view many plots)
-        #plt.savefig('plots/'+str(np.round(rchi_1,3))+'_'+str(np.round(rchi_2,3))+'inv_c_vs_k.png')
-        #plt.savefig(folder+'inv_c_vs_k_full_fit.png')
-        plt.show()
+        end =  []
+        for i in range(len(args_mean)):
+            label = args_mean[i]+'='+str(args[i])
+            end.append(label)
+        end_save = '_'.join(end)
+        end_spaces = end_save.replace('_', ' ')
+
+        plt.suptitle(end_spaces)
+
+        save_name = 'Output/ArtificialBipartiteNets/' + name + '/K_Inv_C_'+end_save+'.png'
+        plt.savefig(save_name)
+        plt.close()
         # Get into dataframe to save results
         temp_df = pd.DataFrame({'mean k 1:': [mean_k_1], 'mean k 2:': [mean_k_2], 'rchi 1:': [rchi_1], 
                             'rchi 2:': [rchi_2], 'r 1:': [r1], 'r 2:': [r2], 'rs 1:': [rs1], 
@@ -111,7 +120,7 @@ def run_real(gen_func,all_args=[],args_mean = [],to_html=False, to_print=False):
         final_df = pd.concat([final_df, temp_df])
     # Saving dataframe to html
     if to_html:
-        save_name_html = 'ArtificialBipartiteNets_results'
+        save_name_html = name+'_results'
         write_html(final_df, save_name_html)
     # Print Dataframe. Bit pointless as it is saved to html 
     # and is barely readable in terminal
@@ -122,16 +131,24 @@ def run_real(gen_func,all_args=[],args_mean = [],to_html=False, to_print=False):
 
 # Run the code
 # First pecify names of models and arguments each take
+functions = [BipartiteBA, BipartiteER]
 names = ['BA_Bipartite', 'ER_bipartite']
+
 bipartiteBA_args_mean = ['m1', 'm2', 'n']
 bipartiteER_args_mean = ['n1', 'n2', 'p']
+joint_args_mean = [bipartiteBA_args_mean, bipartiteER_args_mean]
 
 # Specify arguments for each model. Give as list of tuples for multiple runs
 args_BA = [(1, 3, 30000), (2, 3, 30000)]
 args_ER = [(20000, 10000, 0.0005), (20000, 8000, 0.00025)]
+joint_args = [args_BA, args_ER]
 
-# Run the code for each model - specify arguments for each model and model type
-run_real(BipartiteER, args_ER,bipartiteER_args_mean, to_print=True, to_html=True)
+MakeFolders(names, 'ArtificialBipartiteNets')
+
+for i in range(len(functions)):
+    # Run the code for each model - specify arguments for each model and model type
+    run_real(functions[i], names[i], joint_args[i], joint_args_mean[i] , to_print=True, to_html=True)
 
 end = time.time()
+
 print('Time taken: ', end-start)
