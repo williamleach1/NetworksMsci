@@ -142,6 +142,7 @@ def run_real(names,to_html=False, to_print=False):
         print(final_df)
     return final_df
 
+# path to save and load data that have been processed
 save_name_df = 'Output/RealBipartiteNets/RealBipartiteNets.pkl'
 
 # Load in already done dataframe if it exists
