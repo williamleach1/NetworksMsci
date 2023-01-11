@@ -35,7 +35,7 @@ keep2 = ['N', 'E', 'rchi', 'density', 'av_degree', 'clustering', 'L', 'SWI', 'as
         'std_degree','transition_gap', 'mixing_time', 'hashimoto_radius', 
         'diameter', 'knn_proj_1', 'knn_proj_2']
 
-keep = ['rchi', 'hashimoto_radius', 'diameter', "density", 
+keep = ['rchi', 'hashimoto_radius', 'diameter', "density",
         "av_degree", "clustering", "L", "SWI", "asortivity","std_degree"]
 
 # take only the columns that are needed
@@ -44,16 +44,20 @@ df_uni_fit_features = filter_dataframe_columns(df_uni_fit_features, keep)
 # now clean the dataframe
 df_uni_fit_features = clean_dataframe(df_uni_fit_features)
 
+# Remove rchi > 200
+df_uni_fit_features = df_uni_fit_features[df_uni_fit_features['rchi'] < 200]
+
+
+
 # Show correlation matrix
 #plot_correlation_matrix(df_uni_fit_features, 'pearson')
-#plot_correlation_matrix(df_uni_fit_features, 'spearman')
+plot_correlation_matrix(df_uni_fit_features, 'spearman')
 #plot_correlation_matrix(df_uni_fit_features, 'kendall')
 
 # Show the distribution of the features agaisnt the rchi
-#for column in keep:
-    #plot_distribution(df_uni_fit_features, 'rchi')
-    #plt.pause(1)
-    #plt.close()
+
+plot_all_columns_against_chosen(df_uni_fit_features, 'rchi')
+
 
 
 # Test for normality - find none are normal
@@ -62,7 +66,7 @@ find_normallity(df_uni_fit_features)
 
 median_rounded = round(find_median(df_uni_fit_features, 'rchi'),2)
 
-filter_function = get_lambda_function(1.5)
+filter_function = get_lambda_function(4)
 
 df_uni_fit_class = deepcopy(df_uni_fit_features)
 
@@ -76,8 +80,8 @@ print(df_uni_fit_class)
 X_class, Y_class = split_X_Y(df_uni_fit_class, 'rchi')
 X, Y = split_X_Y(df_uni_fit_features, 'rchi')
 
-X_train, X_test, Y_train, Y_test = split_scale_data(X, Y, 42)
-X_train_class, X_test_class, Y_train_class, Y_test_class = split_scale_data(X_class, Y_class, 42, scale_data=False)
+X_train, X_test, Y_train, Y_test = split_scale_data(X, Y, 20)
+X_train_class, X_test_class, Y_train_class, Y_test_class = split_scale_data(X_class, Y_class, 20, scale_data=False)
 
 print(Y_train_class)
 
@@ -91,12 +95,12 @@ print(Y_train_class)
 # model parameters
 
 
-n_est = 500
-learning = 0.01
+n_est = 1000
+learning = 0.03
 early_stop = 20
 
 # train the model
-model = XGBClassifier(max_depth=12, subsample=0.33, objective='binary:logistic',
+model = XGBClassifier(max_depth=4, subsample=0.25, objective='binary:logistic',
                         n_estimators=n_est, 
                         learning_rate = learning)
 

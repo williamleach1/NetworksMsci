@@ -70,7 +70,7 @@ def run_real(names, to_html=False, to_print=False):
             # find average clustering coefficient
             (C,var_c) = gt.global_clustering(g)
             # find average path length
-            L = np.sum(1/k) /(2*num_verticies)
+            L = np.sum(1/c) / (2*num_verticies)
             # find assortativity
             assortivity, variance = correlations.assortativity(g, "total")
             # calculate small worldness
