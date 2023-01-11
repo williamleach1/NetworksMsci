@@ -95,7 +95,7 @@ def run_real(gen_func, name, all_args=[], args_mean = [], to_html=False, to_prin
         plt.xscale("log")
         #plt.suptitle(bipartite_network_names[i])
         plt.title("a = %2f, b = %2f, alpha = %2f, rchi1=%2f, rchi2=%2f" % (popt[0], popt[1], popt[2], rchi_1, rchi_2))
-        
+        plt.suptitle(name)
         # Save plot
         # alternate args_mean and args
 

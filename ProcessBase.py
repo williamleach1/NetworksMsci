@@ -18,6 +18,7 @@ import itertools
 import graph_tool.all as gt
 import networkx as nx
 from networkx.algorithms import bipartite
+from multiprocessing import Pool
 
 # Function to find closeness and degree for graph_tool graph
 # remove values if degree 0
@@ -40,6 +41,7 @@ def GetKC(g):
         Mean degree"""
     c = centrality.closeness(g).get_array()
     k = g.get_total_degrees(g.get_vertices())
+    # Get mean degree
     mean_k = np.mean(k)
     # remove values if degree 0
     c = c[k > 0]
@@ -50,6 +52,7 @@ def GetKC(g):
     # Get inverse closeness
     inv_c = 1/c
     return k, c, inv_c, mean_k
+
 
 # Function to get K and inverse c for bipartite graph
 # Need to split into two groups
@@ -101,21 +104,161 @@ def GetKC_bipartite(g, to_print=False):
     k_1 = k[partition_array == 0]
     c_1 = c[partition_array == 0]
     inv_c_1 = inv_c[partition_array == 0]
+    # Get mean of second 
     mean_k_1 = np.mean(k_1)
-
+     
+    # split into two groups
     k_2 = k[partition_array == 1]
     c_2 = c[partition_array == 1]
     inv_c_2 = inv_c[partition_array == 1]
+    # Get mean of second
     mean_k_2 = np.mean(k_2)
     return k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2
 
 
-# Function to get second degree
-#
-#
-#--------(Done)TO BE ADDED----------------
-#
-#
+class VisitorSecondDegree(gt.BFSVisitor):
+
+    def __init__(self, pred, dist):
+
+        self.pred = pred
+        self.dist = dist
+
+    def tree_edge(self, e):
+        current_dist = self.dist[e.source()] + 1
+        # If alread visted all second degree neighbours, stop
+        if current_dist > 2:
+            raise StopIteration
+        else:
+            self.pred[e.target()] = int(e.source())
+            self.dist[e.target()] = current_dist
+
+class VisitorAll(gt.BFSVisitor):
+    def __init__(self, pred, dist):
+
+        self.pred = pred
+        self.dist = dist
+
+    def tree_edge(self, e):
+        current_dist = self.dist[e.source()] + 1
+        # If alread visted all second degree neighbours, stop
+        self.pred[e.target()] = int(e.source())
+        self.dist[e.target()] = current_dist
+
+
+# add vertices and edges to the graph
+def get_second_degree(g, v):
+    '''
+    Get counts at second degree (and first degree) from a vertex
+    '''
+    # new property for distance from bob
+    dist = g.new_vertex_property("int")
+    # new property for predecessor - along with distance specifies the tree
+    pred = g.new_vertex_property("int64_t")
+    # complete a bfs_search from bob 
+    # This is a bit of a hack, but it works to ensure only second degree, not full bfs
+    try:
+        gt.bfs_search(g, v, VisitorSecondDegree(pred, dist))
+    except StopIteration:
+        pass
+    # Find counts for distance 1 and 2
+    distances = []
+    for u in g.vertices():
+        distances.append(dist[u])
+    distances = np.array(distances)
+    first_degree = np.sum(distances == 1)
+    second_degree = np.sum(distances == 2)
+    return first_degree, second_degree, v
+
+
+def get_counts_at_distances(g, v):
+    ''''
+    Get counts at each distance from a vertex
+    '''
+    # new property for distance from bob
+    dist = g.new_vertex_property("int")
+    # new property for predecessor - along with distance specifies the tree
+    pred = g.new_vertex_property("int64_t")
+    # complete a bfs_search from bob 
+    gt.bfs_search(g, v, VisitorAll(pred, dist))
+    # Find counts at each distance
+    distances = []
+    for u in g.vertices():
+        distances.append(dist[u])
+    distances = np.array(distances)
+    distances = np.sort(distances)
+    distances, counts = np.unique(distances, return_counts=True)
+    return distances, counts, v
+
+# Find second degree for all vertices
+def get_all_second_degree(g):
+    k1s = []
+    k2s = []
+    vs = []
+    start = time.perf_counter()
+    '''
+    pbar = tqdm((range(g.num_vertices())))
+    for v in pbar:
+        k1, k2, v = get_second_degree(g, v)
+        k1s.append(k1)
+        k2s.append(k2)
+        vs.append(v)
+    '''
+    with Pool() as pool:
+        results = pool.starmap(get_second_degree, [(g, v) for v in range(g.num_vertices())])
+    for r in results:
+        k1s.append(r[0])
+        k2s.append(r[1])
+        vs.append(r[2])
+    
+    end = time.perf_counter()
+    print(f"Time taken: {end - start}")
+    
+    return k1s, k2s, vs
+
+# Function to get counts at each distance for all vertices
+def get_all_counts_with_distance(g):
+    # Find counts at each distance for all vertices in g1 and plot average count at each distance
+    vs = []
+    distances = []
+    counts = []
+    start = time.perf_counter()
+    # Parallel version
+    with Pool() as pool:
+        results = pool.starmap(get_counts_at_distances, [(g, v) for v in range(g.num_vertices())])
+    for r in results:
+        distances.append(r[0])
+        counts.append(r[1])
+        vs.append(r[2])
+    
+    '''
+    pbar = tqdm((range(g.num_vertices())))
+    for v in pbar:
+        d, c, v = get_counts_at_distances(g, v)
+        distances.append(d)
+        counts.append(c)
+        vs.append(v)
+    '''
+    end = time.perf_counter()
+    print(f"Time taken: {end - start}")
+    flat_distances = np.concatenate(distances).ravel()
+    unique_distances = np.unique(flat_distances)
+
+    mean_counts = []
+    std_counts = []
+    for u in unique_distances:
+        counts_at_distance = []
+        for i in range(len(distances)):
+            ds = distances[i]
+            index = np.where(ds == u)[0].tolist()
+            if len(index) > 0:
+                for j in index:
+                    counts_at_distance.append(counts[i][j])
+        counts_at_distance = np.array(counts_at_distance)
+        mean = np.mean(counts_at_distance)
+        mean_counts.append(mean)
+        std = np.std(counts_at_distance)
+        std_counts.append(std)
+    return unique_distances, mean_counts, std_counts
 
 
 # function to aggregate over x to find mean and standard error in y
@@ -741,6 +884,24 @@ def MakeFolders(names, SubFolder):
 # Is a bit messy and inefficient, but works
 # We use this in plotting - input is from aggregation_dict
 def unpack_stat_dict(dict):
+    """Unpack statistics dictionary
+    Parameters
+    ----------
+    dict : dictionary
+        Dictionary of statistics
+    Returns
+    -------
+    ks_final : array
+        Array of k values
+    inv_c_mean : array
+        Array of mean inverse closeness
+    errs : array
+        Array of errors on inverse closeness
+    stds : array
+        Array of standard deviations on inverse closeness
+    counts : array
+        Array of number of samples for each k"""
+
     ks = list(dict.keys())
     ks_final = []
     counts = []

@@ -154,9 +154,9 @@ def get_all_counts_with_distance(g):
 if __name__ == "__main__":
 
     # Load graph
-    g1 = pb.BA(5000, 20)
+    g1 = pb.BA(1000, 5)
     print("Graph loaded")
-    #unique_distances, mean_counts, std_counts = get_all_counts_with_distance(g1)
+    unique_distances, mean_counts, std_counts = get_all_counts_with_distance(g1)
     k1s, k2s, vs = get_all_second_degree(g1)
     plt.plot(k1s, k2s, "o")
     plt.xlabel("First degree")
@@ -164,13 +164,13 @@ if __name__ == "__main__":
     plt.show()
     k ,c, inv_c, mean_k = pb.GetKC(g1)
     # Tests
-    print(len(k)==len(k1s))
-    print(all(k==k1s))
+    #print(len(k)==len(k1s))
+    #print(all(k==k1s))
 
 
 
 
-    '''
+    
     print(mean_counts)
 
     plt.plot(unique_distances, mean_counts, "o")
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     plt.xlabel("Distance")
     plt.ylabel("Counts")
     plt.show()
-    '''
+    
 
 
 

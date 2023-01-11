@@ -49,22 +49,25 @@ ProcessBipartiteReal.py
 - Runs commands to plot k vs 1/c and fit lines and save
 - Saves dataframe with stats as html in Output folder
 
+ProcessBipartiteArtificial.py
+- 
+
 TO DO:
 ------------------------------------------------------------------------
-TO DO - Base: (Before end holidays)
+TO DO - Base: 
 * config-BA model needs adding and analysing.
 * Data-collapse needs adding. 
 * Process networks where N>300000
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
 * Compare beta(fit) to predicited value by z_fit
 
-TO DO - Bipartite: (Before end holidays)
+TO DO - Bipartite: 
 * Find, implement, and process config-BA-bipartite model
 * Plot data collapse
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
 * Compare alpha fit to predicted by value of z_a(fit) and z_b(fit)
 
-TO DO - Second Degree vs Closeness: (theory before end holidays, code 1 or 2 weeks after)
+TO DO - Second Degree vs Closeness:
 * New fit-func for second degree. ----- IMPORTANT
 * New second degree (and closeness) finding function for
     second degree vs closeness.
@@ -113,6 +116,6 @@ Installing graph-tool
     - seaborn
     - ipython
     - networkx
-
+    - openpyxl
 
     

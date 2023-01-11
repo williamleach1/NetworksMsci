@@ -8,10 +8,14 @@ df_uni_real = pd.read_pickle('Output/RealUniNets/RealUniNets.pkl')
 
 df_bi_real = pd.read_pickle('Output/RealBipartiteNets/RealBipartiteNets.pkl')
 
+
 # get number of unipartite where rchi is less than 2
 
-uni_names = df_uni_real.index.values.tolist()
-rchis = df_uni_real['rchi'].values.tolist()
+print(df_uni_real)
+
+
+uni_names = df_bi_real.index.values.tolist()
+rchis = df_bi_real['rchi'].values.tolist()
 
 # print those less than 1 - remove from list
 valid_uni = []

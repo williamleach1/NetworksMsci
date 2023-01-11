@@ -3,7 +3,9 @@ import warnings
 import scipy as sp
 from Plotter import *
 warnings.filterwarnings("error")
-
+import graph_tool.all as gt
+from graph_tool import correlations, generation
+from copy import deepcopy
 
 
 start = time.time()
@@ -17,9 +19,16 @@ def run_real(names, to_html=False, to_print=False):
     -------     
     df : dataframe
         Dataframe containing results"""
-    final_df = pd.DataFrame(columns=["N","1/ln(z)", "1/ln(z) err", "Beta",
-                                "Beta err", "rchi", "pearson r","pearson p-val",
-                                "spearmans r","spearmans p-val"])
+
+
+    columns =   ["N", "E", "1/ln(z)", "1/ln(z) err", "Beta", "Beta err", "rchi",
+                 "pearson r", "pearson p-val", "spearmans r", "spearmans p-val", 
+                 "density", "av_degree", "clustering", "L", "SWI", "asortivity", 
+                 "std_degree"]
+
+    final_df = pd.DataFrame(columns=columns)
+    
+
     error_report = []
     num = len(names)
     pbar = tqdm((range(num)))
@@ -51,25 +60,58 @@ def run_real(names, to_html=False, to_print=False):
             plots_collapse1.add_plot(ks,inv_c_mean/inv_c_pred,yerr=errs/inv_c_pred)
             save_name3 = 'Output/RealUniNets/' + names[i] + '/K_Inv_C_collapse1_clean.png'
             plots_collapse1.plot(save=True,savename=save_name3)
-            temp_df = pd.DataFrame({"N": len(g.get_vertices()), "1/ln(z)": a, "1/ln(z) err": a_err, 
-                                "Beta": b, "Beta err": b_err, "rchi": rchi, "pearson r": r,
-                                "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, 
-                                index=[names[i]])
+            num_verticies = len(g.get_vertices())
+            num_edges = len(g.get_edges())
+            # find densiy of network which is number of edges/number of possible edges
+            density = num_edges/(num_verticies*(num_verticies-1)/2)
+            # find average and standard deviation of degree
+            avg_degree = mean_k
+            std_degree = np.std(k)
+            # find average clustering coefficient
+            (C,var_c) = gt.global_clustering(g)
+            # find average path length
+            L = np.sum(1/k) /(2*num_verticies)
+            # find assortativity
+            assortivity, variance = correlations.assortativity(g, "total")
+            # calculate small worldness
+            c_r = avg_degree / num_verticies
+            c_l = 3 * ( avg_degree - 2 ) / ( 4 * (avg_degree - 1) )
+            L_r = np.log(num_verticies)/np.log(avg_degree)
+            L_l = num_verticies / (2* avg_degree)            
+            # calculate small worldness
+            
+            SWI = (( L - L_l ) / ( L_r - L_l )) * (( C - c_r ) / ( c_l - c_r ))
+            
+
+            if SWI > 1:
+                SWI = 1
+            elif SWI < 0:
+                SWI = 0
+            temp_df = pd.DataFrame({"N": num_verticies,"E":num_edges ,"1/ln(z)": a, "1/ln(z) err": a_err,
+                                    "Beta": b, "Beta err": b_err, "rchi": rchi, "pearson r": r,
+                                    "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp,
+                                    "density": density, "av_degree": avg_degree, "clustering": C,
+                                    "L": L, "SWI": SWI, "asortivity": assortivity, "std_degree": std_degree},
+                                    index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
                 
         # Need to handle errors otherwise code stops. This is not best practice
         # to simply skip over erro
         except OSError:
+            print('OSError')
             error_report.append([names[i], ':  OSError'])
             pass
         except KeyError:
+            print('KeyError')
             error_report.append([names[i], ':  HTTP Error 401: UNAUTHORIZED'])
             pass
         except RuntimeWarning:
+            print('RuntimeWarning')
             error_report.append([names[i], ':  RuntimeWarning'])
             pass
         # Some devices tested have different error instead of RuntimeWarning
         except sp.optimize._optimize.OptimizeWarning:
+            print('OptimizeWarning')
             error_report.append([names[i], ':  OptimizeWarning'])
             pass 
     # Printing error report
@@ -117,13 +159,15 @@ print(len(uni_network_names))
 # Create folder for each network group (if group) and second folder for each network
 MakeFolders(uni_network_names,'RealUniNets')
 # Run analysis on each network
-df = run_real(uni_network_names, to_html=True, to_print=True)
+df = run_real(uni_network_names, to_html=False, to_print=True)
 
 # Save dataframe to pickle if does not exist
 # If exists, append to existing dataframe
 if os.path.exists('Output/RealUniNets/RealUniNets.pkl'):
     df2 = pd.read_pickle('Output/RealUniNets/RealUniNets.pkl')
     df = pd.concat([df, df2])
+    save_name_html = 'RealUnipartiteNets_results'
+    write_html(df, save_name_html)
     df.to_pickle('Output/RealUniNets/RealUniNets.pkl')
 else:
     df.to_pickle('Output/RealUniNets/RealUniNets.pkl')
