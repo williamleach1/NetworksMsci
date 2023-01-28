@@ -247,7 +247,6 @@ def get_mean_and_std_at_distances(all_distances, all_counts):
     std_counts : np.array
         Standard deviation of counts at each distance
     '''
-    
     # Flatten distances list of arrays into one array
     flat_distances = np.concatenate(all_distances).ravel()
     # Find unique distances
@@ -292,13 +291,8 @@ if __name__ == "__main__":
     #print(len(k)==len(k1s))
     #print(all(k==k1s))
 
-
-
-
-    
     print(mean_counts)
 
-    
     # Now plot results for mean and individual counts to test
     for i in range(len(all_distances)):
         plt.plot(all_distances[i], all_counts[i], "rx", alpha= 0.3)

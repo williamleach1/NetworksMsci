@@ -54,20 +54,20 @@ ProcessBipartiteArtificial.py
 
 TO DO:
 ------------------------------------------------------------------------
-TO DO - Base: 
+TO DO - Unipartite: - William - By next week
 * config-BA model needs adding and analysing.
 * Data-collapse needs adding. 
 * Process networks where N>300000
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
 * Compare beta(fit) to predicited value by z_fit
 
-TO DO - Bipartite: 
+TO DO - Bipartite: - William - By next week
 * Find, implement, and process config-BA-bipartite model
 * Plot data collapse
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
 * Compare alpha fit to predicted by value of z_a(fit) and z_b(fit)
 
-TO DO - Second Degree vs Closeness:
+TO DO - Second Degree vs Closeness: - Harry - next few weeks
 * New fit-func for second degree. ----- IMPORTANT
 * New second degree (and closeness) finding function for
     second degree vs closeness.
@@ -77,16 +77,16 @@ TO DO - Second Degree vs Closeness:
 * Compare average (and standard deviation?) length of shortest path predicted to actual value
 * Compare gamma fit to predicted by value of z_(fit)
 
-TO DO - global network statistics: 
+TO DO - global network statistics: - Both - next few weeks
 * quantify how well the fit function fits for real networks (proportion)
 * Look at correlation between goodness of fit and other network statistics (average degree, average path length, clustering coefficient, small-world coefficint, tree-ness, number loops, assortivity, etc.)
 * Potential machine learning to predict goodness of fit from network statistics - could be useful for predicting network structure from network statistics
 
-TO DO - Relation breakdown investigation:
+TO DO - Relation breakdown investigation: - William - For next week
 * Test octopus (or star) to see if network structure causes fit to be worse
 * Test other models with large scale (and well studied network structure) to see if fit is worse
 
-TO DO - Investigating assumptions (constant branching ratio, similarities of branches, hard cut-off):
+TO DO - Investigating assumptions (constant branching ratio - Harry, similarities of branches - Harry, hard cut-off - William): 
 * Investigate Branching ratio numerically, compare to average found in fit.
     * Function for this is started
 * Justify if constant branching ratio is a good assumption
@@ -94,7 +94,7 @@ TO DO - Investigating assumptions (constant branching ratio, similarities of bra
 * Investigate exponential growth in nodes reached when traversing rooted tree
 * Investigate Hard-Cut off numerically
 
-TO DO - ring analysis:
+TO DO - ring analysis: - Decide later
 * Investigate ring analysis in context of mean first passage time
 * Can E&C simple approximation be used to find mean first passage time?
 

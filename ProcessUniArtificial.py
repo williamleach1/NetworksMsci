@@ -24,14 +24,14 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
     -------     
     df : dataframe
         Dataframe containing results"""
-    dfs = pd.DataFrame(columns=["Mean k","N","1/ln(z)", "1/ln(z) err", "Beta", 
+    dfs = pd.DataFrame(columns=["Mean k","N","density","1/ln(z)", "1/ln(z) err", "Beta", 
                             "Beta err", "rchi", "pearson r","pearson p-val",
                             "spearmans r","spearmans p-val"])
     # prepare datarame of reduced chi squared. index is number of nodes, column is mean k
     rchi_df = pd.DataFrame(index=ns,columns=av_deg)
     i =0
     for av_degree in av_deg:
-        final_df = pd.DataFrame(columns=["Mean k","N","1/ln(z)", "1/ln(z) err", "Beta", 
+        final_df = pd.DataFrame(columns=["Mean k","N","density","1/ln(z)", "1/ln(z) err", "Beta", 
                             "Beta err", "rchi", "pearson r","pearson p-val",
                             "spearmans r","spearmans p-val"])
         plots = Plotter(name)
@@ -44,8 +44,14 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
             a_err = np.sqrt(pcov[0][0])
             b_err = np.sqrt(pcov[1][1])
             ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
-            plots.add_plot(ks,inv_c_mean,errs,label='N = '+ str(n),fitline=True,function=Tim,popt=[a,b])
-            temp_df = pd.DataFrame({"Mean k": mean_k,"N": n, "1/ln(z)": a, "1/ln(z) err": a_err, "Beta": b, 
+            
+
+            num_verticies = len(g.get_vertices())
+            num_edges = len(g.get_edges())
+            # find densiy of network which is number of edges/number of possible edges
+            density = num_edges/(num_verticies*(num_verticies-1)/2)
+            plots.add_plot(ks,inv_c_mean,errs,label='Density = '+ str(round(density,2)),fitline=True,function=Tim,popt=[a,b])
+            temp_df = pd.DataFrame({"Mean k": mean_k,"N": n,"density":density, "1/ln(z)": a, "1/ln(z) err": a_err, "Beta": b, 
                             "Beta err": b_err, "rchi": rchi, "pearson r": r,
                             "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, index=[i])
             final_df = pd.concat([final_df, temp_df])
@@ -67,8 +73,9 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
                     writer.writerow(row)
                 csvFile.close()
 
-        save_name = 'Output/ArtificialUniNets/' + name + '/K_Inv_C_'+str(av_degree)+'.png'
+        save_name = 'Output/ArtificialUniNets/' + name + '/K_Inv_C_density'+str(density)+'.png'
         plots.plot(legend=True,save=True,savename=save_name)
+        plt.show()
         dfs = pd.concat([dfs, final_df])
     if to_html:
         save_name_html =  name+'_results'
@@ -86,8 +93,8 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
 # av_degree = [6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,
 #              44,46,48,50,52,54,56,58,60]
 
-ns = [1000,4000,7000]#,10000,13000,16000,19000,22000,25000]
-av_degree = [6,10,14]#,18,22,26,30,34,38,42,46,50,54,58,62,66,70]
+ns = [2000,4000,8000,16000,32000]#,10000,13000,16000,19000,22000,25000]
+av_degree = [1600]
 names = ['BA','ER']#,'Config']
 MakeFolders(names, 'ArtificialUniNets')
 Zs_BA=[]

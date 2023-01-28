@@ -24,7 +24,7 @@ def run_real(names, to_html=False, to_print=False):
     columns =   ["N", "E", "1/ln(z)", "1/ln(z) err", "Beta", "Beta err", "rchi",
                  "pearson r", "pearson p-val", "spearmans r", "spearmans p-val", 
                  "density", "av_degree", "clustering", "L", "SWI", "asortivity", 
-                 "std_degree"]
+                 "std_degree", "av_counts"]
 
     final_df = pd.DataFrame(columns=columns)
     
@@ -44,6 +44,7 @@ def run_real(names, to_html=False, to_print=False):
             b_err = np.sqrt(pcov[1][1])
             plots = Plotter(names[i])
             ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
+            av_counts = np.mean(counts)
             plots.add_plot(ks,inv_c_mean,yerr=errs,fitline=True,function=Tim,popt=[a,b])
             save_name = 'Output/RealUniNets/' + names[i] + '/K_Inv_C_Clean.png'
             plots.plot(save=True,savename=save_name)
@@ -91,8 +92,8 @@ def run_real(names, to_html=False, to_print=False):
                                     "Beta": b, "Beta err": b_err, "rchi": rchi, "pearson r": r,
                                     "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp,
                                     "density": density, "av_degree": avg_degree, "clustering": C,
-                                    "L": L, "SWI": SWI, "asortivity": assortivity, "std_degree": std_degree},
-                                    index=[names[i]])
+                                    "L": L, "SWI": SWI, "asortivity": assortivity, "std_degree": std_degree,
+                                    "av_counts": av_counts}, index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
                 
         # Need to handle errors otherwise code stops. This is not best practice
@@ -145,7 +146,7 @@ print(already_done)
 # Need to get column names for each network from the dataframe
 # Need to do after running get_networks.py
 Unipartite_df = pd.read_pickle('Data/unipartite.pkl')
-upper_node_limit = 50000 # takes around 1 minute per run with 50000
+upper_node_limit = 70000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
 
 unipartite_df = filter_num_verticies(Unipartite_df, upper_node_limit)

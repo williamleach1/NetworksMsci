@@ -1,22 +1,59 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
+from AnalysisBase import *
+import seaborn as sns
 # Load in analysed dataframes
 
 df_uni_real = pd.read_pickle('Output/RealUniNets/RealUniNets.pkl')
 
 df_bi_real = pd.read_pickle('Output/RealBipartiteNets/RealBipartiteNets.pkl')
 
+Unipartite_df = pd.read_pickle('Data/unipartite.pkl')
+
+# transpose the dataframes so that the index is the network name
+Unipartite_df = Unipartite_df.transpose()
+
+# load completed dataframes
+
+
+processed_networks = get_intersection_index(df_uni_real, Unipartite_df)
+
+# Take the subset of the unipartite dataframe that has not processed
+Unipartite_df_processed = filter_dataframe_index(Unipartite_df, processed_networks)
+
+# Now we want to join the two uniprtite dataframes together
+# on the index (which is the network name)
+df_uni_real = join_dataframes(df_uni_real, Unipartite_df_processed)
 
 # get number of unipartite where rchi is less than 2
 
 print(df_uni_real)
 
+# Filter for rchi > 3
+df_uni_real_bad = df_uni_real[df_uni_real['rchi'] > 3]
+#df_uni_real_bad = df_uni_real_bad[df_uni_real_bad['rchi'] > 1]
+# Sort by rchi
+df_uni_real_bad = df_uni_real_bad.sort_values(by=['rchi'], ascending=False)
 
-uni_names = df_bi_real.index.values.tolist()
-rchis = df_bi_real['rchi'].values.tolist()
+# Display index, N, E, rchi, density
+df_uni_real_bad = df_uni_real_bad[['N', 'E', 'rchi', 'density','av_counts','hashimoto_radius']]
+print(df_uni_real_bad)
 
+corr = df_uni_real_bad.corr(method='pearson')
+print(corr)
+plot_correlation_matrix(corr)
+
+
+plt.plot(df_uni_real_bad['hashimoto_radius'], df_uni_real_bad['av_counts'], 'o', color='black')
+plt.xlabel('Hashimoto Radius')
+plt.ylabel('Average Counts')
+plt.show()
+
+
+uni_names = df_uni_real.index.values.tolist()
+rchis = df_uni_real['rchi'].values.tolist()
+densities = df_uni_real['density'].values.tolist()
 # print those less than 1 - remove from list
 valid_uni = []
 valid_rchi = []
