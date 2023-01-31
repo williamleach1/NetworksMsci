@@ -13,7 +13,7 @@ from tqdm import tqdm
 from iminuit import Minuit
 from iminuit.cost import LeastSquares
 from iminuit.util import describe
-from numba import njit
+#from numba import njit
 import itertools
 import graph_tool.all as gt
 import networkx as nx
@@ -53,6 +53,36 @@ def GetKC(g):
     inv_c = 1/c
     return k, c, inv_c, mean_k
 
+def GetK_2C(g):
+    """Get closeness and degree for graph_tool graph
+    Parameters  
+    ----------                  
+    g : graph_tool graph
+        Graph to be analyzed  
+    Returns
+    -------     
+    k : array
+        Degree of each node
+    c : array
+        Closeness of each node
+    inv_c : array
+        Inverse Closeness of each node
+    mean_k : float
+        Mean degree"""
+    c = centrality.closeness(g).get_array()
+    k_1, k_2, vs = get_all_second_degree(g)
+    k_2 = np.asarray(k_2)
+    # Get mean degree
+    mean_k_2 = np.mean(k_2)
+    # remove values if degree 0
+    c = c[k_2 > 0]
+    k_2 = k_2[k_2 > 0]
+    # remove values if closeness is nan
+    k_2 = k_2[~np.isnan(c)]
+    c = c[~np.isnan(c)]
+    # Get inverse closeness
+    inv_c = 1/c
+    return k_2, c, inv_c, mean_k_2
 
 # Function to get K and inverse c for bipartite graph
 # Need to split into two groups
@@ -211,7 +241,7 @@ def get_all_second_degree(g):
         vs.append(r[2])
     
     end = time.perf_counter()
-    print(f"Time taken: {end - start}")
+    #print(f"Time taken: {end - start}")
     
     return k1s, k2s, vs
 
@@ -346,6 +376,9 @@ def Harry_1(k, a, b, alpha):
 
 def Harry_2(k, a, b, alpha):
     return -2*np.log(k*(1+np.exp(a)))/(a+b)+alpha
+
+def Tim_2(k_2, a, b):
+    return -a*np.log(k_2) + b
 
 
 # Function Descibing analytic relation with second degree
@@ -526,7 +559,7 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
 
 # Function to do all above for given graph
 
-def process(g,to_print=False):
+def process(g,type,to_print=False):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -558,20 +591,40 @@ def process(g,to_print=False):
         Spearman correlation
     rsp : float
         p-value"""
-    k, c, inv_c, mean_k = GetKC(g)
-    function = Tim
-    popt, pcov = fitter(k, inv_c, function, to_print=to_print)
-    statistics_dict = aggregate_dict(k, inv_c)
-    rchi = red_chi_square(k, inv_c,function, popt,statistics_dict)
-    r, rp = pearson(k, c)
-    rs, rsp = spearman(k, c)
-    if to_print:
-        print("Reduced chi square:", rchi)
-        print("Pearson correlation:", r)
-        print("Pearson p-value:", rp)
-        print("Spearman correlation:", rs)
-        print("Spearman p-value:", rsp)
-    return k, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k
+
+    if type == 1:
+    
+        k, c, inv_c, mean_k = GetKC(g)
+        function = Tim
+        popt, pcov = fitter(k, inv_c, function, to_print=to_print)
+        statistics_dict = aggregate_dict(k, inv_c)
+        rchi = red_chi_square(k, inv_c,function, popt,statistics_dict)
+        r, rp = pearson(k, c)
+        rs, rsp = spearman(k, c)
+        if to_print:
+            print("Reduced chi square:", rchi)
+            print("Pearson correlation:", r)
+            print("Pearson p-value:", rp)
+            print("Spearman correlation:", rs)
+            print("Spearman p-value:", rsp)
+        return k, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k
+
+    else:
+
+        k_2, c, inv_c, mean_k_2 = GetK_2C(g)
+        function = Tim_2
+        popt, pcov = fitter(k_2, inv_c, function, to_print=to_print)
+        statistics_dict = aggregate_dict(k_2, inv_c)
+        rchi = red_chi_square(k_2, inv_c,function, popt,statistics_dict)
+        r, rp = pearson(k_2, c)
+        rs, rsp = spearman(k_2, c)
+        if to_print:
+            print("Reduced chi square:", rchi)
+            print("Pearson correlation:", r)
+            print("Pearson p-value:", rp)
+            print("Spearman correlation:", rs)
+            print("Spearman p-value:", rsp)
+        return k_2, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k_2
 
 # Function to process Bipartite graphs
 def process_bipartite(g,to_print=False):
