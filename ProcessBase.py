@@ -19,6 +19,7 @@ import graph_tool.all as gt
 import networkx as nx
 from networkx.algorithms import bipartite
 from multiprocessing import Pool
+import uncertainties.unumpy as unumpy
 
 # Function to find closeness and degree for graph_tool graph
 # remove values if degree 0
@@ -557,6 +558,39 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
     rchi = chi/(len(new_k)-f)
     return rchi
 
+# Function to get an analytical value for beta from z_fit
+
+def beta_fit(z_fit,z_err,N):
+    """
+    Parameters
+    --------
+    z : z_fit
+        Fitted z from another function
+    z_err : z_fit error
+            z error to be propagated to give beta fit error
+    N : Number of nodes of the graph being analysed
+    Returns
+    --------
+    beta_fit : Fitted value for beta using analytical equation
+    beta_fit_err : propagated beta fit error from z fit error
+    """
+
+    # Tims analytical equation for beta as a function of z_fit and N
+
+    z_fit=unumpy.uarray(( z_fit, z_err ))
+    beta_fit = unumpy.np.log(z_fit-1)/np.log(z_fit) - 1/(z_fit-1) + np.log(N)/np.log(z_fit)
+
+    beta_fit_err = unumpy.std_devs(beta_fit)
+    beta_fit = np.log(z_fit-1)/np.log(z_fit) - 1/(z_fit-1) + np.log(N)/np.log(z_fit)
+
+    return beta_fit, beta_fit_err[0]
+
+def gamma_fit(z_fit,z_err,N):
+
+    gamma_fit,gamma_fit_err = beta_fit(z_fit,z_err,N)
+
+    return gamma_fit + 1, gamma_fit_err
+
 # Function to do all above for given graph
 
 def process(g,type,to_print=False):
@@ -1003,3 +1037,10 @@ def write_html(df, name, folder='Output'):
 #
 #
 
+x=0.2
+errx=0.04
+y=0.2
+erry=0.04
+x=unumpy.uarray(( x, errx ))
+y=unumpy.uarray(( y, erry))
+print(x*y)
