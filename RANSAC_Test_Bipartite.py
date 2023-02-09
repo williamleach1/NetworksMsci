@@ -7,12 +7,12 @@ import ProcessBase as pb
 
 
 #celegans_interactomes/Microarray
-g = pb.load_graph('celegans_interactomes/Microarray')
+g = pb.load_graph('marvel_universe')
 
-pos = gt.sfdp_layout(g)
+pos = gt.radial_tree_layout(g, g.vertex(0))
 print('done')
 
-k, c,popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k= pb.process(g,1,Real = True, Name = 'celegans_interactomes_Microarray')
+k, c,popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k= pb.process(g,1, to_print=False)
 
 ks, inv_c_mean, errs, stds, counts   = pb.unpack_stat_dict(statistics_dict)
 
@@ -36,16 +36,20 @@ temp_log_k = log_k
 temp_inv_cs = inv_cs
 temp_v = v
 
+temp_v = temp_v[temp_log_k>3]
+temp_inv_cs = temp_inv_cs[temp_log_k>3]
+temp_log_k = temp_log_k[temp_log_k>3]
+
+
 print(temp_v)
 
 counts = []
 
-
-
 plt.figure()
 i = 0
 #while num_outliers > 0.1*len(log_k):
-for i in range(1):
+for i in range(2):
+    
     ransac = RANSACRegressor(max_trials=1000000)
     ransac.fit(temp_log_k.reshape(-1,1), temp_inv_cs)
     inlier_mask = ransac.inlier_mask_

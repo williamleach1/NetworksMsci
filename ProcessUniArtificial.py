@@ -38,7 +38,7 @@ def run(gen_func, ns, av_deg, name,to_html=False,to_print=False):
         for n in ns:
             g = gen_func(n, av_degree)
             g = clean_graph(g)
-            k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,to_print=False)
+            k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,1,to_print=False)
             a = popt[0]
             b = popt[1]
             a_err = np.sqrt(pcov[0][0])

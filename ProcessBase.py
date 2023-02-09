@@ -20,6 +20,7 @@ import networkx as nx
 from networkx.algorithms import bipartite
 from multiprocessing import Pool
 import uncertainties.unumpy as unumpy
+import pickle as pickle
 
 # Function to find closeness and degree for graph_tool graph
 # remove values if degree 0
@@ -148,7 +149,14 @@ def GetKC_bipartite(g, to_print=False):
 
 
 class VisitorSecondDegree(gt.BFSVisitor):
-
+    '''
+    We use a custom visitor that inherits from BFSVisitor
+        and overrides the tree_edge method.
+    This tree edge method is then called by the bfs_search.
+    Needs new properties for distance and predecessor to be made for the graph
+        but this is done in the funciton.
+    Used graph_tool documentation to start.
+    '''
     def __init__(self, pred, dist):
 
         self.pred = pred
@@ -157,21 +165,32 @@ class VisitorSecondDegree(gt.BFSVisitor):
     def tree_edge(self, e):
         current_dist = self.dist[e.source()] + 1
         # If alread visted all second degree neighbours, stop
+        # This makes the function faster for large graphs
         if current_dist > 2:
             raise StopIteration
         else:
+            # If not add to the tree
             self.pred[e.target()] = int(e.source())
             self.dist[e.target()] = current_dist
 
 class VisitorAll(gt.BFSVisitor):
+    '''
+    We use a custom visitor that inherits from BFSVisitor
+        and overrides the tree_edge method.
+    This tree edge method is then called by the bfs_search.
+    Needs new properties for distance and predecessor to be made for the graph
+        but this is done in the funciton.
+    This is the full BFS version and does not stop until all nodes visted.
+    Used graph_tool documentation to start.
+    '''
     def __init__(self, pred, dist):
-
+        # Initialise
         self.pred = pred
         self.dist = dist
 
     def tree_edge(self, e):
         current_dist = self.dist[e.source()] + 1
-        # If alread visted all second degree neighbours, stop
+        # Add to the tree
         self.pred[e.target()] = int(e.source())
         self.dist[e.target()] = current_dist
 
@@ -180,12 +199,26 @@ class VisitorAll(gt.BFSVisitor):
 def get_second_degree(g, v):
     '''
     Get counts at second degree (and first degree) from a vertex
+    Parameters
+    ----------
+    g : graph_tool graph
+        Graph to search
+    v : graph_tool vertex
+        Vertex to search from
+    Returns
+    -------
+    first_degree : int
+        Number of first degree neighbours
+    second_degree : int
+        Number of second degree neighbours
+    v : graph_tool vertex
+        Vertex that was searched from
     '''
-    # new property for distance from bob
+    # new property for distance from current vertex
     dist = g.new_vertex_property("int")
     # new property for predecessor - along with distance specifies the tree
     pred = g.new_vertex_property("int64_t")
-    # complete a bfs_search from bob 
+    # Start a bfs_search from the vertex
     # This is a bit of a hack, but it works to ensure only second degree, not full bfs
     try:
         gt.bfs_search(g, v, VisitorSecondDegree(pred, dist))
@@ -193,49 +226,81 @@ def get_second_degree(g, v):
         pass
     # Find counts for distance 1 and 2
     distances = []
+    # iterate over all vertices to find distance from root
     for u in g.vertices():
         distances.append(dist[u])
     distances = np.array(distances)
+    # First degree is distance one, second degree is distance two
+    # We need the sum of these
     first_degree = np.sum(distances == 1)
     second_degree = np.sum(distances == 2)
-    return first_degree, second_degree, v
+    return first_degree, second_degree, v #Return
 
 
 def get_counts_at_distances(g, v):
     ''''
     Get counts at each distance from a vertex
+    Parameters
+    ----------
+    g : graph_tool graph
+        Graph to search
+    v : graph_tool vertex
+        Vertex to search from
+    Returns
+    -------
+    distances : np.array
+        Distances from the vertex
+    counts : np.array
+        Number of vertices at each distance
+    v : graph_tool vertex
+        Vertex that was searched from
+    
     '''
-    # new property for distance from bob
+    # new property for distance from vertex
     dist = g.new_vertex_property("int")
     # new property for predecessor - along with distance specifies the tree
     pred = g.new_vertex_property("int64_t")
     # complete a bfs_search from bob 
     gt.bfs_search(g, v, VisitorAll(pred, dist))
-    # Find counts at each distance
+    # Find counts at each distance using property
+    # Could also use predecessor property (may need to modify branches) to specify branches
     distances = []
     for u in g.vertices():
         distances.append(dist[u])
     distances = np.array(distances)
     distances = np.sort(distances)
+    # find counts at each distance
     distances, counts = np.unique(distances, return_counts=True)
     return distances, counts, v
 
 # Find second degree for all vertices
 def get_all_second_degree(g):
+    '''
+    Get counts at second degree (and first degree) from all vertices
+    Use multiprocessing to speed up.
+    Parameters
+    ----------
+    g : graph_tool graph
+        Graph to search
+    Returns
+    -------
+    k1s : list
+        Number of first degree neighbours
+    k2s : list
+        Number of second degree neighbours
+    vs : list
+        Vertices that were searched from
+    '''
+    # Initialise lists
     k1s = []
     k2s = []
     vs = []
     start = time.perf_counter()
-    '''
-    pbar = tqdm((range(g.num_vertices())))
-    for v in pbar:
-        k1, k2, v = get_second_degree(g, v)
-        k1s.append(k1)
-        k2s.append(k2)
-        vs.append(v)
-    '''
+    # Parallel version  - this is much faster (by the factor of the number of cores)
+    # Each core is doing a different vertex at any time (approximately)
     with Pool() as pool:
         results = pool.starmap(get_second_degree, [(g, v) for v in range(g.num_vertices())])
+    # Unpack results by appending to lists
     for r in results:
         k1s.append(r[0])
         k2s.append(r[1])
@@ -243,54 +308,95 @@ def get_all_second_degree(g):
     
     end = time.perf_counter()
     #print(f"Time taken: {end - start}")
-    
+    # Return lists - return vs to check we calculate other quantities from same vertex when comparing
     return k1s, k2s, vs
 
 # Function to get counts at each distance for all vertices
 def get_all_counts_with_distance(g):
-    # Find counts at each distance for all vertices in g1 and plot average count at each distance
+    '''
+    Get counts at each distance from all vertices
+    Use multiprocessing to speed up.
+    Parameters
+    ----------
+    g : graph_tool graph
+        Graph to search
+    Returns
+    -------
+    all_distances : list of np.arrays
+        Distances from the vertex for each vertex
+        i.e. distances[i] is the distances from vertex i
+    all_counts : list of np.arrays
+        Number of vertices at each distance
+        i.e. counts[i] is the counts at each distance from vertex i
+    vs : list 
+        Vertices that were searched from
+    '''
+    # Find counts at each distance for all vertices
     vs = []
-    distances = []
-    counts = []
+    all_distances = []
+    all_counts = []
     start = time.perf_counter()
-    # Parallel version
+    # Parallel version  - this is much faster (by the factor of the number of cores)
+    # Each core is doing a different vertex at any time (approximately)
     with Pool() as pool:
         results = pool.starmap(get_counts_at_distances, [(g, v) for v in range(g.num_vertices())])
+    # Unpack results by appending to lists
     for r in results:
-        distances.append(r[0])
-        counts.append(r[1])
+        all_distances.append(r[0])
+        all_counts.append(r[1])
         vs.append(r[2])
     
-    '''
-    pbar = tqdm((range(g.num_vertices())))
-    for v in pbar:
-        d, c, v = get_counts_at_distances(g, v)
-        distances.append(d)
-        counts.append(c)
-        vs.append(v)
-    '''
     end = time.perf_counter()
-    print(f"Time taken: {end - start}")
-    flat_distances = np.concatenate(distances).ravel()
-    unique_distances = np.unique(flat_distances)
 
+    # Return lists - return vs to check we calculate other quantities from same vertex when comparing
+    return all_distances, all_counts, vs
+
+def get_mean_and_std_at_distances(all_distances, all_counts):
+    '''
+    Get mean and standard deviation of counts at each distance
+    Parameters
+    ----------
+    all_distances : list of np.arrays
+        Distances from the vertex for each vertex
+        i.e. distances[i] is the distances from vertex i
+    all_counts : list of np.arrays
+        counts at each distance for each vertex
+        i.e. counts[i] is the counts at each distance from vertex i
+    Returns
+    -------
+    unique_distances : np.array
+        Distances from the vertex
+    mean_counts : np.array
+        Mean counts at each distance
+    std_counts : np.array
+        Standard deviation of counts at each distance
+    '''
+    # Flatten distances list of arrays into one array
+    flat_distances = np.concatenate(all_distances).ravel()
+    # Find unique distances
+    unique_distances = np.unique(flat_distances)
+    # Find mean and standard deviation of counts at each distance
     mean_counts = []
     std_counts = []
+    # Loop over unique distances
     for u in unique_distances:
+        # Find counts at each distance
         counts_at_distance = []
-        for i in range(len(distances)):
-            ds = distances[i]
+        for i in range(len(all_distances)):
+            # Find indices where distance is equal to u (unique distance)
+            ds = all_distances[i]
             index = np.where(ds == u)[0].tolist()
+            # If there are any counts at this distance, append to list
             if len(index) > 0:
                 for j in index:
-                    counts_at_distance.append(counts[i][j])
+                    counts_at_distance.append(all_counts[i][j])
+        # Find mean and standard deviation of counts at this distance
         counts_at_distance = np.array(counts_at_distance)
         mean = np.mean(counts_at_distance)
         mean_counts.append(mean)
         std = np.std(counts_at_distance)
         std_counts.append(std)
     return unique_distances, mean_counts, std_counts
-
 
 # function to aggregate over x to find mean and standard error in y
 #           --> remove if only appears once
@@ -368,7 +474,6 @@ def spearman(x, y):
 # and to perform straight line fit to unaggregated data
 def Tim(k, a, b):
     return -a*np.log(k) + b
-
 
 # Function(s) describing model for bipartite graphs
 def Harry_1(k, a, b, alpha):
@@ -499,7 +604,6 @@ def fitter_test_dual_curve_fit(k1,k2,inv_c1,inv_c2,funcA,funcB,to_print=False):
         return np.append(data1,data2)
     initial_guess = [1,1,1]
 
-
     popt, pcov = optimize.curve_fit(combo_func, k, inv_c, p0=initial_guess)
     if to_print:
         print(popt)
@@ -540,7 +644,7 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
         sigma = stats_dict[k[i]][2]
         count = stats_dict[k[i]][3]
         # Need to not use if sigma = 0 (possible for identical nodes)
-        if sigma > 0.001:
+        if sigma > 0.01:
             # if count > 1 add to list as standard deviation is not 0
             if count>1:
                 # add to new lists
@@ -593,7 +697,7 @@ def gamma_fit(z_fit,z_err,N):
 
 # Function to do all above for given graph
 
-def process(g,type,to_print=False):
+def process(g,type,Real,Name=None):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -627,41 +731,47 @@ def process(g,type,to_print=False):
         p-value"""
 
     if type == 1:
-    
-        k, c, inv_c, mean_k = GetKC(g)
+        if Real:
+            if os.path.exists('Data/GetKC/'+Name+'.pkl'):
+                with open('Data/GetKC/'+Name+'.pkl','rb') as f:
+                    k, c, inv_c, mean_k = pickle.load(f)
+            else:
+                os.makedirs('Data/GetKC',exist_ok=True)
+                k, c, inv_c, mean_k = GetKC(g)
+                with open('Data/GetKC/'+Name+'.pkl','wb') as f:
+                    pickle.dump((k, c, inv_c, mean_k),f)
+                
+        else:
+            k, c, inv_c, mean_k = GetKC(g)
         function = Tim
-        popt, pcov = fitter(k, inv_c, function, to_print=to_print)
+        popt, pcov = fitter(k, inv_c, function)
         statistics_dict = aggregate_dict(k, inv_c)
         rchi = red_chi_square(k, inv_c,function, popt,statistics_dict)
         r, rp = pearson(k, c)
         rs, rsp = spearman(k, c)
-        if to_print:
-            print("Reduced chi square:", rchi)
-            print("Pearson correlation:", r)
-            print("Pearson p-value:", rp)
-            print("Spearman correlation:", rs)
-            print("Spearman p-value:", rsp)
         return k, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k
-
     else:
-
-        k_2, c, inv_c, mean_k_2 = GetK_2C(g)
+        if Real:
+            if os.path.exists('Data/GetK_2C/'+Name+'.pkl'):
+                with open('Data/GetK_2C/'+Name+'.pkl','rb') as f:
+                    k_2, c, inv_c, mean_k_2 = pickle.load(f)
+            else:
+                os.makedirs('Data/GetK_2C',exist_ok=True)
+                k_2, c, inv_c, mean_k_2 = GetK_2C(g)
+                with open('Data/GetK_2C/'+Name+'.pkl','wb') as f:
+                    pickle.dump((k_2, c, inv_c, mean_k_2),f)
+        else:
+            k_2, c, inv_c, mean_k_2 = GetK_2C(g)
         function = Tim_2
-        popt, pcov = fitter(k_2, inv_c, function, to_print=to_print)
+        popt, pcov = fitter(k_2, inv_c, function)
         statistics_dict = aggregate_dict(k_2, inv_c)
         rchi = red_chi_square(k_2, inv_c,function, popt,statistics_dict)
         r, rp = pearson(k_2, c)
         rs, rsp = spearman(k_2, c)
-        if to_print:
-            print("Reduced chi square:", rchi)
-            print("Pearson correlation:", r)
-            print("Pearson p-value:", rp)
-            print("Spearman correlation:", rs)
-            print("Spearman p-value:", rsp)
         return k_2, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k_2
 
 # Function to process Bipartite graphs
-def process_bipartite(g,to_print=False):
+def process_bipartite(g,Real = False,Name=None):
     """Perform all analysis on bipartite graph
     Parameters
     ----------
@@ -672,12 +782,21 @@ def process_bipartite(g,to_print=False):
     output : list
         List of all outputs from processing
     """
-
-    # Get degree and closeness for each node in two groups
-    k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2 = GetKC_bipartite(g)
+    if Real:
+        if os.path.exists('Data/GetKC_bipartite/'+Name+'.pkl'):
+            with open('Data/GetKC_bipartite/'+Name+'.pkl','rb') as f:
+                k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2 = pickle.load(f)
+        else:
+            os.makedirs('Data/GetKC_bipartite',exist_ok=True)
+            k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2 = GetKC_bipartite(g)
+            with open('Data/GetKC_bipartite/'+Name+'.pkl','wb') as f:
+                pickle.dump((k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2),f)
+    else:
+        # Get degree and closeness for each node in two groups
+        k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2 = GetKC_bipartite(g)
     
     # Fit to both groups - can use either scipy curve fit or iminuit
-    popt, errs = fitter_test_dual_curve_fit(k_1,k_2,inv_c_1,inv_c_2, Harry_1, Harry_2, to_print=to_print)
+    popt, errs = fitter_test_dual_curve_fit(k_1,k_2,inv_c_1,inv_c_2, Harry_1, Harry_2)
     #popt1, errs1 = fitter_test_dual(k_1,k_2,inv_c_1,inv_c_2, Harry_1, Harry_2, to_print=to_print)
     a ,b ,alpha = popt
 
@@ -696,33 +815,12 @@ def process_bipartite(g,to_print=False):
     rs1, rsp1 = spearman(k_1, c_1)
     rs2, rsp2 = spearman(k_2, c_2)
 
-    # Print results
-    if to_print:
-        print("Group 1 Reduced chi square:", rchi_1)
-        print("Group 1 Pearson correlation:", r1)
-        print("Group 1 Pearson p-value:", rp1)
-        print("Group 1 Spearman correlation:", rs1)
-        print("Group 1 Spearman p-value:", rsp1)
-        print("Group 2 Reduced chi square:", rchi_2)
-        print("Group 2 Pearson correlation:", r2)
-        print("Group 2 Pearson p-value:", rp2)
-        print("Group 2 Spearman correlation:", rs2)
-        print("Group 2 Spearman p-value:", rsp2)
-        print("a:", a)
-        print("a error:", errs[0])
-        print("b:", b)
-        print("b error:", errs[1])
-        print("alpha:", alpha)
-        print("alpha error:", errs[2])
-
     # Return results
     output = [k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2, 
                 rchi_1, rchi_2, r1, r2, rs1, rs2, rp1, rp2, rsp1, rsp2, 
                 popt, errs, statistics_dict_1, statistics_dict_2]
 
     return output
-
-
 
 # Function to generate BA model
 # Here we specify an average degree to define the model
@@ -788,6 +886,12 @@ def config_BA(n, av_deg):
     g = generation.random_rewire(g, model="configuration")
     return g
 '''
+
+# Function to generate octopus/star graph
+# NEEDS TO BE ADDED
+
+
+
 
 #This makes an initial, complete bipartite graph ready to grow (preferentially)
 #Every even node will be connected to every odd node.
@@ -912,8 +1016,6 @@ def clean_graph(g):
     return g
 
 
-
-
 # Function to load graph from Netzschleuder
 def load_graph(name, clean=True):
     """Load graph from pickle
@@ -1036,11 +1138,3 @@ def write_html(df, name, folder='Output'):
 #
 #
 #
-
-x=0.2
-errx=0.04
-y=0.2
-erry=0.04
-x=unumpy.uarray(( x, errx ))
-y=unumpy.uarray(( y, erry))
-print(x*y)

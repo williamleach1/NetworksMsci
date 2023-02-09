@@ -35,15 +35,12 @@ def SBM(sizes = [], ps = []):
         for j in range(v):
             membership.append(i)
     membership = np.array(membership)
-    
 
-
-
-    g = generation.generate_sbm(membership, ps)
+    g = generation.generate_sbm(membership, ps)#, micro_degs=True)
     return g, membership
 
 
-def GetKC(g):
+def GetKC(g, membership):
     """Get closeness and degree for graph_tool graph
     Parameters  
     ----------                  
@@ -64,14 +61,16 @@ def GetKC(g):
     # Get mean degree
     mean_k = np.mean(k)
     # remove values if degree 0
-    #c = c[k > 0]
-    #k = k[k > 0]
+    c = c[k > 0]
+    membership = membership[k > 0]
+    k = k[k > 0]
     # remove values if closeness is nan
-    #k = k[~np.isnan(c)]
-    #c = c[~np.isnan(c)]
+    k = k[~np.isnan(c)]
+    membership = membership[~np.isnan(c)]
+    c = c[~np.isnan(c)]
     # Get inverse closeness
     inv_c = 1/c
-    return k, c, inv_c, mean_k
+    return k, c, inv_c, mean_k, membership
 
 # split by unique values of membership
 def split_kc(k, c, inv_c, mean_k, membership):
@@ -198,11 +197,42 @@ def unpack_stat_dict(dict):
     counts = np.asarray(counts)
     return ks_final, inv_c_mean, errs, stds, counts
 
-sizes = [1000, 1000]
+sizes = [15000, 2000]
 
-ps = np.array([ [8000, 500],
-                [500, 1000]])
+ps = np.array([ [0, 50000],
+                [50000, 0]])
 
+g, mem = SBM(sizes, ps)
+
+# Get degree and closeness
+k, c, inv_c, mean_k,mem = GetKC(g, mem)
+
+# Split by membership
+ks, cs, inv_cs, mean_ks = split_kc(k, c, inv_c, mean_k, mem)
+
+figs, axs = plt.subplots(1, 2, figsize=(10, 5))
+for i in range(len(ks)):
+    axs[0].plot(ks[i], inv_cs[i],'.', label='Block {}'.format(i), alpha=0.5)
+axs[0].legend()
+axs[0].set_xlabel(r'$k$')
+axs[0].set_ylabel(r'$\frac{1}{c}$')
+axs[0].set_xscale('log')
+
+
+# Aggregate over k to find mean and standard error in inv_c
+# for each value of k
+for i in range(len(ks)):
+    stat_dict = aggregate_dict(ks[i], inv_cs[i])
+    ks_final, inv_c_mean, errs, stds, counts = unpack_stat_dict(stat_dict)
+    axs[1].errorbar(ks_final, inv_c_mean, yerr=errs, fmt='none', label='Block {}'.format(i))
+axs[1].legend()
+axs[1].set_xlabel(r'$k$')
+axs[1].set_ylabel(r'$\frac{1}{c}$')
+axs[1].set_xscale('log')
+plt.show()
+
+
+'''
 G = collection.ns['marvel_universe']
 
 state = gt.minimize_nested_blockmodel_dl(G)
@@ -258,13 +288,13 @@ for i in range(len(BS)):
         ks_final, inv_c_mean, errs, stds, counts = unpack_stat_dict(stat_dict)
         #ax.errorbar(ks_final, inv_c_mean, yerr = errs, label = 'Block {}'.format(i+1))
         ax2.plot(ks[k], inv_cs[k],'x', label = 'Block {}'.format(k+1))
-    '''
+    
     ax.set_xlabel('Degree')
     ax.set_ylabel('Inverse Closeness')
     ax.set_xscale('log')
     ax.legend()
     plt.show()
-    '''
+    
     print(i)
     ax2.set_title('Level {}'.format(i+1))
     ax2.set_xlabel('Degree')
@@ -272,3 +302,4 @@ for i in range(len(BS)):
     ax2.set_xscale('log')
     ax2.legend()
     plt.show()
+'''

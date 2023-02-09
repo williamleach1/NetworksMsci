@@ -9,7 +9,7 @@ import numpy as np
 #         if it has not been run before.
 
 if os.path.exists("Input/messydata.pkl")==False:
-    os.makedirs("Input")
+    os.makedirs("Input", exist_ok=True)
     url = "https://networks.skewed.de/api/nets?full=True"
     df = pd.read_json(url)
     df.to_pickle("Input/messydata.pkl")

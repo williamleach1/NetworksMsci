@@ -1,7 +1,6 @@
 from ProcessBase import *
 import warnings
 import scipy as sp
-from Plotter import *
 
 warnings.filterwarnings("error")
 
@@ -16,7 +15,7 @@ params =    {'font.size' : 16,
 plt.rcParams.update(params)
 
 start = time.time()
-def run_real(names,to_html=False, to_print=False):
+def run_real(names):
     """Perform all analysis on graph
     Parameters  
     ----------                  
@@ -38,8 +37,14 @@ def run_real(names,to_html=False, to_print=False):
         # Using try to catch errors
         try:
             g = load_graph(names[i])
-            output = process_bipartite(g, to_print=False)
-            
+            if '/' in names[i]:
+                name = names[i].split('/')
+                name = name[0]+'_'+name[1]
+            else:
+                name = names[i]
+
+            output = process_bipartite(g,Real = True, Name=name)
+            k_uni, c_uni,popt_uni,pcov_uni, rchi_uni, r, rp, rs, rsp, statistics_dict_uni, mean_k_uni= process(g, 1, Real = True, Name = name )
             # Not a fan of having all these variables
             k_1 = output[0]
             c_1 = output[1]
@@ -64,16 +69,21 @@ def run_real(names,to_html=False, to_print=False):
             statistics_dict_1 = output[20]
             statistics_dict_2 = output[21]
 
+            ks_1, inv_c_mean_1, errs_1, stds_1, counts_1 = unpack_stat_dict(statistics_dict_1)
+            ks_2, inv_c_mean_2, errs_2, stds_2, counts_2 = unpack_stat_dict(statistics_dict_2)
 
-            ks_1, inv_c_mean_1, errs_1, stds_1, counts_1   = unpack_stat_dict(statistics_dict_1)
-            ks_2, inv_c_mean_2, errs_2, stds_2, counts_2   = unpack_stat_dict(statistics_dict_2)
+            folder = 'Output/RealBipartiteNets/'+bipartite_network_names[i]+'/'
 
             plt.figure()
 
             # Uncomment to plot all (unaggregated) points
-            #plt.plot(k_1, inv_c_1,'r.', label="Group 1", alpha=0.1)
-            #plt.plot(k_2, inv_c_2,'b.', label="Group 2", alpha=0.1)
+            plt.plot(k_1, inv_c_1,'r.', label="Group 1", alpha=0.1)
+            plt.plot(k_2, inv_c_2,'b.', label="Group 2", alpha=0.1)
+            plt.xscale("log")
+            plt.savefig(folder + 'inv_c_vs_k_unagg_labelled.png')
+           
 
+            plt.figure()
             # Plot group 1
             plt.errorbar(ks_1, inv_c_mean_1, yerr=errs_1, fmt='.' ,markersize = 5,capsize=2,color='black')
             plt.plot(ks_1, inv_c_mean_1,'ro', label="Group 1 mean")
@@ -98,7 +108,7 @@ def run_real(names,to_html=False, to_print=False):
             # Also save in plots folder (gets messy but easy to view many plots)
             plt.savefig('plots/'+str(np.round(rchi_1,3))+'_'+str(np.round(rchi_2,3))+'inv_c_vs_k.png')
             plt.savefig(folder+'inv_c_vs_k_full_fit.png')
-
+            plt.close()
             # Get into dataframe to save results
             temp_df = pd.DataFrame({'mean k 1:': [mean_k_1], 'mean k 2:': [mean_k_2], 'rchi 1:': [rchi_1], 
                                 'rchi 2:': [rchi_2], 'r 1:': [r1], 'r 2:': [r2], 'rs 1:': [rs1], 
@@ -116,11 +126,10 @@ def run_real(names,to_html=False, to_print=False):
         except KeyError:
             error_report.append([names[i], ':  HTTP Error 401: UNAUTHORIZED'])
             pass
-        
         except RuntimeWarning:
             error_report.append([names[i], ':  RuntimeWarning'])
             pass
-        # Some devices tested have different error instead of RuntimeWarning
+        #Some devices tested have different error instead of RuntimeWarning
         except sp.optimize._optimize.OptimizeWarning:
             error_report.append([names[i], ':  OptimizeWarning'])
             pass 
@@ -131,37 +140,15 @@ def run_real(names,to_html=False, to_print=False):
     for i in error_report:
         print(i[0], i[1])
     print('-----------------------------------')
-    # Saving dataframe to html
-    if to_html:
-        save_name_html = 'ReaBipartiteNets_results'
-        write_html(final_df, save_name_html)
-    # Print Dataframe. Bit pointless as it is saved to html 
-    # and is barely readable in terminal
-    if to_print:
-        print('Real Bipartite done')
-        print(final_df)
+    
     return final_df
-
-# path to save and load data that have been processed
-save_name_df = 'Output/RealBipartiteNets/RealBipartiteNets.pkl'
-
-# Load in already done dataframe if it exists
-if os.path.exists(save_name_df):
-    df_already = pd.read_pickle(save_name_df)
-    already_done = df_already.index.values.tolist()
-else:
-    already_done = []
-
-print(already_done)    
-
 
 # Load in unipartite and run for each real networks
 # Need to get column names for each network from the dataframe
 # Need to do after running get_networks.py
 Bipartite_df = pd.read_pickle('Data/bipartite.pkl')
-upper_node_limit = 50000 # takes around 1 minute per run with 50000
+upper_node_limit = 200000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
-
 
 Bipartite_df = filter_num_verticies(Bipartite_df, upper_node_limit)
 bipartite_network_names = Bipartite_df.columns.values.tolist()
@@ -171,19 +158,13 @@ print(len(bipartite_network_names))
 MakeFolders(bipartite_network_names,'RealBipartiteNets')
 # Run analysis on each network
 
-bipartite_network_names = [x for x in bipartite_network_names if x not in already_done]
+df = run_real(bipartite_network_names)
 
-df = run_real(bipartite_network_names, to_html=True, to_print=True)
-
-# Save dataframe to pickle if it doesn't already exist
-if os.path.exists(save_name_df):
-    df2 = pd.read_pickle(save_name_df)
-    df = pd.concat([df, df2])
-    df.to_pickle(save_name_df)
-else:
-    df.to_pickle(save_name_df)
-
-
+# path to save and load data that have been processed
+save_name_df = 'Output/RealBipartiteNets/RealBipartiteNets.pkl'
+df.to_pickle(save_name_df)
+save_name_html = 'ReaBipartiteNets_results'
+write_html(df, save_name_html)
 # Measure time taken to run to help predict for larger networks
 # Takes around 1-2 minute per run with 50000 upper node limit
 # Takes around 40 minutes - 1 hour per run with 200000 upper node limit
