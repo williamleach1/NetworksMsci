@@ -479,13 +479,15 @@ def Tim(k, a, b):
 def Harry_1(k, a, b, alpha):
     return -2*np.log(k*(1+np.exp(b)))/(a+b)+alpha
 
-
 def Harry_2(k, a, b, alpha):
     return -2*np.log(k*(1+np.exp(a)))/(a+b)+alpha
 
 def Tim_2(k_2, a, b):
     return -a*np.log(k_2) + b
 
+def HO_Tim(k,a,b,N):
+    pho = 1 - k/(N-1)
+    return (-a*np.log(k) + b)*pho + (1-pho)*(1-a)
 
 # Function Descibing analytic relation with second degree
 #
