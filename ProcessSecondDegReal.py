@@ -1,7 +1,7 @@
 from ProcessBase import *
 import warnings
 import scipy as sp
-from Plotter import *
+from archive.Plotter import *
 warnings.filterwarnings("error")
 import graph_tool.all as gt
 from graph_tool import correlations, generation
@@ -22,7 +22,7 @@ def run_real(names, to_html=False, to_print=False):
 
 
     columns =   ["N", "E", "1/ln(z)", "1/ln(z) err", "Beta", "Beta err", "rchi",
-                 "pearson r", "pearson p-val", "spearmans r", "spearmans p-val",  
+                 "pearson r", "pearson p-val", "Beta fit", "Beta fit err",  "spearmans r", "spearmans p-val",  
                  "std_degree", "av_counts"]
 
     final_df = pd.DataFrame(columns=columns)

@@ -68,12 +68,9 @@ for i in range(1):
     current_outliers = outlier_mask
     num_outliers = len(temp_log_k)
     #i += 1
-
-    
-
+ 
 plt.plot(temp_log_k, temp_inv_cs, 'o', alpha = 0.2)
 plt.show()
-
 
 g.vertex_properties['inlier'] = v_group
 

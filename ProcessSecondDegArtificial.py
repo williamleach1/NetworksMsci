@@ -1,7 +1,7 @@
 from ProcessBase import *
 import warnings
 import scipy as sp
-from Plotter import *
+from archive.Plotter import *
 warnings.filterwarnings("error")
 import graph_tool.all as gt
 

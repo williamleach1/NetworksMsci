@@ -1,7 +1,7 @@
 from ProcessBase import *
 import warnings
 import scipy as sp
-from Plotter import *
+from archive.Plotter import *
 
 warnings.filterwarnings("error")
 
@@ -122,11 +122,6 @@ def run_real(gen_func, name, all_args=[], args_mean = [], to_html=False, to_prin
     if to_html:
         save_name_html = name+'_results'
         write_html(final_df, save_name_html)
-    # Print Dataframe. Bit pointless as it is saved to html 
-    # and is barely readable in terminal
-    if to_print:
-        print('Artificial Bipartite done')
-        print(final_df)
     return final_df
 
 # Run the code

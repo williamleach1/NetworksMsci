@@ -1,20 +1,11 @@
-import os
+
 import networkx as nx
-# Run for BA, ER and Config. return as dataframe
 import seaborn as sns
 from matplotlib import cm
-
-from Plotter import *
+from archive.Plotter import *
 from ProcessBase import *
-
 from datetime import datetime
-import csv
 from graph_tool import generation, centrality, inference, collection
-import graph_tool.all as gt
-
-
-
-
 
 
 def SBM(sizes = [], ps = []):

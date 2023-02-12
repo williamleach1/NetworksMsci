@@ -5,7 +5,6 @@ from sklearn.linear_model import RANSACRegressor
 import matplotlib.pyplot as plt
 import ProcessBase as pb
 
-
 #celegans_interactomes/Microarray
 g = pb.load_graph('marvel_universe')
 
@@ -73,11 +72,8 @@ for i in range(2):
     num_outliers = len(temp_log_k)
     #i += 1
 
-    
-
 plt.plot(temp_log_k, temp_inv_cs, 'o', alpha = 0.2)
 plt.show()
-
 
 g.vertex_properties['inlier'] = v_group
 

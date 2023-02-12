@@ -19,7 +19,7 @@ import graph_tool.all as gt
 import networkx as nx
 from networkx.algorithms import bipartite
 from multiprocessing import Pool
-import uncertainties.unumpy as unumpy
+from uncertainties import ufloat, umath
 import pickle as pickle
 
 # Function to find closeness and degree for graph_tool graph
@@ -664,7 +664,7 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
 
 # Function to get an analytical value for beta from z_fit
 
-def beta_fit(z_fit,z_err,N):
+def beta_fit(a,a_err,N):
     """
     Parameters
     --------
@@ -681,13 +681,20 @@ def beta_fit(z_fit,z_err,N):
 
     # Tims analytical equation for beta as a function of z_fit and N
 
-    z_fit=unumpy.uarray(( z_fit, z_err ))
-    beta_fit = unumpy.np.log(z_fit-1)/np.log(z_fit) - 1/(z_fit-1) + np.log(N)/np.log(z_fit)
+    #x = ufloat(0.20, 0.01)
 
-    beta_fit_err = unumpy.std_devs(beta_fit)
-    beta_fit = np.log(z_fit-1)/np.log(z_fit) - 1/(z_fit-1) + np.log(N)/np.log(z_fit)
+    a_1 = ufloat( a, a_err )
+    z = umath.exp(1/a_1)
+    z_err = z.s
+    z_fit = np.exp(1/a)
 
-    return beta_fit, beta_fit_err[0]
+    z_fit = ufloat( z_fit, z_err )
+    beta_fit = umath.log(z_fit-1)/umath.log(z_fit) - 1/(z_fit-1) + umath.log(N)/umath.log(z_fit)
+
+    beta_fit_err = beta_fit.s
+    beta_fit = beta_fit.n #np.log(z_fit-1)/np.log(z_fit) - 1/(z_fit-1) + np.log(N)/np.log(z_fit)
+
+    return beta_fit, beta_fit_err
 
 def gamma_fit(z_fit,z_err,N):
 
@@ -742,6 +749,7 @@ def process(g,type,Real,Name=None):
                     pickle.dump((k, c, inv_c, mean_k),f)
                 
         else:
+            print('Generating data for',Name)
             k, c, inv_c, mean_k = GetKC(g)
         function = Tim
         popt, pcov = fitter(k, inv_c, function)
