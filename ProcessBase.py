@@ -497,7 +497,7 @@ def HO_Tim(k,a,b,N):
 #
 
 # Function to perform fit to specified function using curve_fit
-def fitter(k,inv_c,function,to_print=False):
+def fitter(k,inv_c,function,N = None, to_print=False):
     """Perform fit to specified function using scipy curve_fit
     Parameters
     ----------
@@ -520,7 +520,11 @@ def fitter(k,inv_c,function,to_print=False):
     pcov[1,1] : float
         b error
     """
-    popt, pcov = optimize.curve_fit(function, k, inv_c)
+    if N == None:
+        popt, pcov = optimize.curve_fit(function, k, inv_c)
+    else:
+        function_2 = lambda k, a, b : function(k, a, b, N) 
+        popt, pcov = optimize.curve_fit(function_2, k, inv_c)
     if to_print:
         print("gradient fit :", popt[0],"+/-",np.sqrt(pcov[0][0]))
         print("constant fit :",popt[1],"+/-",np.sqrt(pcov[1][1]))
@@ -760,6 +764,31 @@ def process(g,type,Real,Name=None):
         r, rp = pearson(k, c)
         rs, rsp = spearman(k, c)
         return k, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k
+
+    elif type == 3:
+        if Real:
+            if os.path.exists('Data/GetKC/'+Name+'.pkl'):
+                with open('Data/GetKC/'+Name+'.pkl','rb') as f:
+                    k, c, inv_c, mean_k = pickle.load(f)
+            else:
+                os.makedirs('Data/GetKC',exist_ok=True)
+                k, c, inv_c, mean_k = GetKC(g)
+                with open('Data/GetKC/'+Name+'.pkl','wb') as f:
+                    pickle.dump((k, c, inv_c, mean_k),f)
+                
+        else:
+            print('Generating data for',Name)
+            k, c, inv_c, mean_k = GetKC(g)
+        function = HO_Tim
+        N = len(g.get_vertices())
+        popt, pcov = fitter(k, inv_c, function, N = N)
+        popt = [popt[0],popt[1],N]
+        statistics_dict = aggregate_dict(k, inv_c)
+        rchi = red_chi_square(k, inv_c,function, popt,statistics_dict)
+        r, rp = pearson(k, c)
+        rs, rsp = spearman(k, c)
+        return k, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k
+
     else:
         if Real:
             if os.path.exists('Data/GetK_2C/'+Name+'.pkl'):

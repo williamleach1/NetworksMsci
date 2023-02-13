@@ -46,7 +46,7 @@ plt.figure()
 i = 0
 #while num_outliers > 0.1*len(log_k):
 for i in range(1):
-    ransac = RANSACRegressor(max_trials=1000000)
+    ransac = RANSACRegressor(residual_threshold = 2,max_trials=1000000)
     ransac.fit(temp_log_k.reshape(-1,1), temp_inv_cs)
     inlier_mask = ransac.inlier_mask_
     outlier_mask = np.logical_not(inlier_mask)

@@ -5,7 +5,7 @@ from AnalysisBase import *
 import seaborn as sns
 # Load in analysed dataframes
 
-df_uni_real = pd.read_pickle('Output/RealUniNets/RealUniNets.pkl')
+df_uni_real = pd.read_pickle('Output/RealUniNets/RealUniNets_HO.pkl')
 
 df_bi_real = pd.read_pickle('Output/RealBipartiteNets/RealBipartiteNets.pkl')
 

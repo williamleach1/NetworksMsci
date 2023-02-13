@@ -5,21 +5,6 @@ from ProcessBase import *
 from datetime import datetime
 import csv
 
-
-def package(g):
-
-    g = clean_graph(g)
-    k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,1,to_print=False)
-    ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
-    rchi = red_chi_square(k,c,  )
-    unagg = [k, c]
-
-
-
-
-
-
-
 def run(gen_func, ns, av_deg, name):
     """Perform all analysis on graph
     Parameters  
