@@ -13,7 +13,7 @@ params =    {'font.size' : 16,
             'axes.titlesize': 16,
             'figure.titlesize': 16,
             'figure.figsize': (12, 9),}
-
+plt.rcParams.update(params)
 
 start = time.time()
 def run_real(names, to_html=False):
@@ -126,8 +126,6 @@ def run_real(names, to_html=False):
             std_degree = np.std(k)
             # find average path length
             L = np.sum(1/c) / (2*num_verticies)
-
-
 
             # Get value of beta from fit z
             try:
