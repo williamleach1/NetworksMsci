@@ -7,102 +7,77 @@ import csv
 
 
 def package(g):
-
     g = clean_graph(g)
-    k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,1,to_print=False)
+    k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,1)
     ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
     rchi = red_chi_square(k,c,  )
     unagg = [k, c]
+    agg = [ks, inv_c_mean, errs]
+    agg_pred = [ks, Tim(ks, *popt)]
+    return unagg, agg, agg_pred, rchi
 
+def get_density(g):
+    num_verticies = len(g.get_vertices())
+    num_edges = len(g.get_edges())
+    # find densiy of network which is number of edges/number of possible edges
+    density = num_edges/(num_verticies*(num_verticies-1)/2)
+    return density
 
-
-
-
-
-
-def run(gen_func, ns, av_deg, name):
-    """Perform all analysis on graph
-    Parameters  
-    ----------                  
-    gen_func : function
-        Function to generate graph
-    ns : array
-        Array of number of nodes
-    av_deg : int
-        Average degree
-    Returns
-    -------     
-    df : dataframe
-        Dataframe containing results"""
-    columns=    ["Mean k","N","density","1/ln(z)", "1/ln(z) err", "Beta", 
-                "Beta err", "rchi", "pearson r","pearson p-val",
-                "spearmans r","spearmans p-val"]
-    # prepare datarame of reduced chi squared. index is number of nodes, column is mean k
-    rchi_df = pd.DataFrame(index=ns,columns=av_deg)
-    i =0
-    for av_degree in av_deg:
-        final_df = pd.DataFrame(columns=["Mean k","N","density","1/ln(z)", "1/ln(z) err", "Beta", 
-                            "Beta err", "rchi", "pearson r","pearson p-val",
-                            "spearmans r","spearmans p-val"])
-        for n in ns:
-            g = gen_func(n, av_degree)
-            g = clean_graph(g)
-            k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,1,to_print=False)
-            a = popt[0]
-            b = popt[1]
-            a_err = np.sqrt(pcov[0][0])
-            b_err = np.sqrt(pcov[1][1])
-            ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
-            
-
-            num_verticies = len(g.get_vertices())
-            num_edges = len(g.get_edges())
-            # find densiy of network which is number of edges/number of possible edges
-            density = num_edges/(num_verticies*(num_verticies-1)/2)
-            plots.add_plot(ks,inv_c_mean,errs,label='Density = '+ str(round(density,2)),fitline=True,function=Tim,popt=[a,b])
-            temp_df = pd.DataFrame({"Mean k": mean_k,"N": n,"density":density, "1/ln(z)": a, "1/ln(z) err": a_err, "Beta": b, 
-                            "Beta err": b_err, "rchi": rchi, "pearson r": r,
-                            "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp}, index=[i])
-            final_df = pd.concat([final_df, temp_df])
-            rchi_df.loc[n,av_degree] = rchi
-            i+=1
-
-            os.makedirs('Output/RchiUniArtificial', exist_ok=True)
-            # save reduced chi squared to csv file for each graph type
-            if name == 'BA':
-                row = [datetime.now(),n,av_degree,rchi]
-                with open('Output/RchiUniArtificial/rchisBA.csv','a') as csvFile:
-                    writer = csv.writer(csvFile)
-                    writer.writerow(row)
-                csvFile.close()
-            elif name == 'ER':
-                row = [datetime.now(),n,av_degree,rchi]
-                with open('Output/RchiUniArtificial/rchisER.csv','a') as csvFile:
-                    writer = csv.writer(csvFile)
-                    writer.writerow(row)
-                csvFile.close()
-
-        save_name = 'Output/ArtificialUniNets/' + name + '/K_Inv_C_density'+str(density)+'.png'
-        plots.plot(legend=True,save=True,savename=save_name)
-        plt.show()
-        dfs = pd.concat([dfs, final_df])
-    return dfs, rchi_df
-
-# ns = [1000,2000,3000,4000,5000,6000,7000,8000,9000,10000,11000,
-#         12000,13000,14000,15000,16000,17000,18000,19000,20000]
-# av_degree = [6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,42,
-#              44,46,48,50,52,54,56,58,60]
-
-ns = [2000,4000,8000,16000,32000]#,10000,13000,16000,19000,22000,25000]
-av_degree = [1600]
-names = ['BA','ER']#,'Config']
-MakeFolders(names, 'ArtificialUniNets')
-Zs_BA=[]
-Zs_ER=[]
-repeats = 1
+def get_clustering(g):
+    (C, var_c) = gt.global_clustering(g)
+    return C
 
 # Plot one for BA - various mean k for one N
 # Also do a collapse with multiple displayed on one plot
+
+
+plt.figure()
+
+for i in range
+plt.errorbar(ks, inv_c_mean, yerr=errs, fmt='.' ,markersize = 5,capsize=2,color='black')
+plt.plot(ks, inv_c_mean,'ro', label="Data")
+plt.plot(ks, Tim(ks, *popt),'b--', label="Fit to data")
+
+plt.legend()
+plt.xlabel(r"$k$")
+plt.ylabel(r"$\frac{1}{c}$", rotation=0)
+plt.xscale("log")
+plt.title(names[i])
+plt.savefig(folder + 'inv_c_vs_k_agg.svg', dpi=900)
+plt.close()
+
+# Now for collapse plot
+inv_c_pred = Tim(ks,a,b)
+y = inv_c_mean/inv_c_pred
+y_err = errs/inv_c_pred
+plt.figure()
+plt.title(names[i])
+# Shade +/- 0.05
+plt.fill_between(ks, 1-0.05, 1+0.05, color='grey', alpha=0.2, label=r'$\pm 5\%$')
+plt.errorbar(ks, y, yerr=y_err, fmt='.' ,markersize = 5,capsize=2,color='black')
+plt.plot(ks, y,'ro', label = 'Data')
+plt.xlabel("k")
+plt.ylabel(r"$\frac{\hat{c}}{c}$", rotation=0)
+plt.legend()
+plt.savefig(folder + 'inv_c_vs_k_collapse.svg', dpi=900)
+plt.close()
+
+plt.figure()
+plt.title(names[i])
+c_mean = 1/inv_c_mean
+c_pred = 1/inv_c_pred
+plt.plot(c_pred, c_mean, 'ro')
+plt.ylabel(r"$c$", rotation=0)
+plt.xlabel(r"$\hat{c}$", rotation=0)
+# Add line at 45 degrees and shade +/- 5%
+plt.plot(c_pred, c_pred, 'k--', label='Expected')
+plt.fill_between(1/inv_c_pred, 1/inv_c_pred*(1-0.05), 1/inv_c_pred*(1+0.05), color='grey', alpha=0.2, label=r'$\pm 5\%$')
+
+plt.savefig(folder + 'c_vs_c_hat.svg', dpi=900)
+plt.close()
+
+
+
 
 
 
@@ -120,6 +95,9 @@ repeats = 1
 
 
 # Contour plot of BA and ER reduced chi squared for various N and mean k
+
+
+
 
 
 

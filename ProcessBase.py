@@ -755,7 +755,6 @@ def process(g,type,Real,Name=None):
                     pickle.dump((k, c, inv_c, mean_k),f)
                 
         else:
-            print('Generating data for',Name)
             k, c, inv_c, mean_k = GetKC(g)
         function = Tim
         popt, pcov = fitter(k, inv_c, function)
@@ -777,7 +776,6 @@ def process(g,type,Real,Name=None):
                     pickle.dump((k, c, inv_c, mean_k),f)
                 
         else:
-            print('Generating data for',Name)
             k, c, inv_c, mean_k = GetKC(g)
         function = HO_Tim
         N = len(g.get_vertices())

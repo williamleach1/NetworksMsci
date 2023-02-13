@@ -21,7 +21,7 @@ def run_real(names, to_html=False, to_print=False):
         Dataframe containing results"""
 
 
-    columns =   ["N", "E", "1/ln(z)", "1/ln(z) err", "Beta", "Beta err", "rchi",
+    columns =   ["N", "E", "1/ln(z)", "1/ln(z) err", "Beta", "Beta err", "rchi_second",
                  "pearson r", "pearson p-val", "Beta fit", "Beta fit err",  "spearmans r", "spearmans p-val",  
                  "std_degree", "av_counts"]
 
@@ -79,7 +79,7 @@ def run_real(names, to_html=False, to_print=False):
 
             
             temp_df = pd.DataFrame({"N": num_verticies,"E":num_edges ,"1/ln(z)": a, "1/ln(z) err": a_err,
-                                    "Gamma": b, "Gamma err": b_err, "rchi": rchi, "pearson r": r,
+                                    "Gamma": b, "Gamma err": b_err, "rchi_second": rchi, "pearson r": r,
                                     "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp,
                                     "av_degree": avg_degree, "std_degree": std_degree,
                                     "av_counts": av_counts}, index=[names[i]])
