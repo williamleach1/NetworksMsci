@@ -1,5 +1,5 @@
 from ProcessBase import *
-
+import matplotlib.cm as cm
 params =    {'font.size' : 16,
             'axes.labelsize':16*2,
             'axes.labelpad': 20,
@@ -13,7 +13,7 @@ params =    {'font.size' : 16,
 plt.rcParams.update(params)
 
 def package_2(g):
-    g = clean_graph(g)
+    g = clean_graph(g, extra = False)
     k, c, popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k = process(g,2,Real=False)
     ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
     unagg = [k, 1/c]
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     figs, axs = plt.subplots(1, 2, figsize=(15, 10))
 
     N = 2000
-    av_degs = [10,20,40,80]
+    av_degs = [10,20,40,80,160,320]
 
     for i in range(len(av_degs)):
         g = BA(N, av_degs[i])
@@ -55,7 +55,11 @@ if __name__ == "__main__":
         #unagg_HO, agg_HO, agg_pred_HO = package_HO(g)
 
         plt.figure()
-        plt.plot(unagg[0], unagg[1], 'o', label = r'$\langle k \rangle , N = $' + str(av_degs[i])+', '+str(N)) 
+        index = np.arange(len(unagg[0])).astype(float)
+        # Color by index
+
+        plt.scatter(unagg[0], unagg[1],c=index,cmap = cm.plasma ,
+            label = r'$\langle k \rangle , N = $' + str(av_degs[i])+', '+str(N)) 
         plt.xlabel(r"$k_{2}$")
         plt.ylabel(r"$\frac{1}{c}$", rotation=0)
         plt.xscale("log")

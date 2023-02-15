@@ -1,4 +1,6 @@
 from ProcessBase import *
+import matplotlib.cm as cm
+
 
 params =    {'font.size' : 16,
             'axes.labelsize':16*2,
@@ -53,7 +55,7 @@ figA, axsA = plt.subplots(1,1)
 figs, axs = plt.subplots(1, 2, figsize=(15, 10))
 
 N = 2000
-av_degs = [10,20,40,80]
+av_degs = [10,20,40,80,160,320]
 
 for i in range(len(av_degs)):
     g = BA(N, av_degs[i])
@@ -61,7 +63,11 @@ for i in range(len(av_degs)):
     #unagg_HO, agg_HO, agg_pred_HO = package_HO(g)
 
     plt.figure()
-    plt.plot(unagg[0], unagg[1], 'o', label = r'$\langle k \rangle , N = $' + str(av_degs[i])+', '+str(N)) 
+    index = np.arange(len(unagg[0])).astype(float)
+    # Color by index
+
+    plt.scatter(unagg[0], unagg[1],c=index,cmap = cm.plasma ,
+            label = r'$\langle k \rangle , N = $' + str(av_degs[i])+', '+str(N)) 
     plt.xlabel(r"$k$")
     plt.ylabel(r"$\frac{1}{c}$", rotation=0)
     plt.xscale("log")

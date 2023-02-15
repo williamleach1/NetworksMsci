@@ -1037,7 +1037,7 @@ def BipartiteER(n1, n2, p):
 #
 # Function to clean graph
 
-def clean_graph(g):
+def clean_graph(g, extra = True):
     """Clean graph
     Parameters  
     ----------                  
@@ -1048,8 +1048,9 @@ def clean_graph(g):
     g : graph_tool graph
         Cleaned graph"""
     g = topology.extract_largest_component(g, directed=False, prune=True)
-    gt_stats.remove_parallel_edges(g)
-    gt_stats.remove_self_loops(g)
+    if extra:
+        gt_stats.remove_parallel_edges(g)
+        gt_stats.remove_self_loops(g)
     return g
 
 
