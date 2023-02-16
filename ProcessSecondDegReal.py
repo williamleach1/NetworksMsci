@@ -21,9 +21,8 @@ def run_real(names, to_html=False, to_print=False):
         Dataframe containing results"""
 
 
-    columns =   ["N", "E", "1/ln(z)", "1/ln(z) err", "Beta", "Beta err", "rchi_second",
-                 "pearson r", "pearson p-val", "Beta fit", "Beta fit err",  "spearmans r", "spearmans p-val",  
-                 "std_degree", "av_counts"]
+    columns =   ["N","E","1/ln(z)","1/ln(z) err","Gamma","Gamma err", "rchi_second",
+                "av_second_degree", "std_second_degree","av_counts_second_degree"]
 
     final_df = pd.DataFrame(columns=columns)
     
@@ -49,27 +48,65 @@ def run_real(names, to_html=False, to_print=False):
             b = popt[1]
             a_err = np.sqrt(pcov[0][0])
             b_err = np.sqrt(pcov[1][1])
-            plots = Plotter(names[i])
             k_2s, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
             av_counts = np.mean(counts)
 
-            # Aggregated data plots
-            plots.add_plot(k_2s,inv_c_mean,yerr=errs,fitline=True,function=Tim,popt=[a,b])
-            save_name = 'Output/RealUniNets/' + names[i] + '/K_2_Inv_C_Clean.png'
-            plots.plot(save=True,savename=save_name)
+            inv_c = 1/c
+            plt.figure()
+            plt.title(names[i])
+            folder = 'Output/RealUniNets/' + names[i] + '/'
+            # Uncomment to plot all (unaggregated) points
+            plt.plot(k_2, inv_c,'r.', alpha=0.1)
+            plt.xscale("log")
+            plt.xlabel(r"$k_{2}$")
+            plt.ylabel(r"$\frac{1}{c}$", rotation=0)
+            plt.savefig(folder + 'inv_c_vs_k2_unagg.svg', dpi=900)
+            plt.close()
 
-            # now for unaggragated data plots
-            plots_unag = Plotter(names[i])
-            plots_unag.add_plot(k_2,1/c,fitline=True,function=Tim,popt=[a,b])
-            save_name2 = 'Output/RealUniNets/' + names[i] + '/K_2_Inv_C_unagg_clean.png'
-            plots_unag.plot(save=True,savename=save_name2)
+            # Now for aggregated data plots
+            plt.figure()
+            plt.errorbar(k_2s, inv_c_mean, yerr=errs, fmt='.' ,markersize = 5,capsize=2,color='black')
+            plt.plot(k_2s, inv_c_mean,'ro', label="Data")
+            # Plot fit
+            plt.plot(k_2s, Tim_2(k_2s, *popt),'b--', label="Fit to data")
+            plt.legend()
+            plt.xlabel(r"$k_{2}$")
+            plt.ylabel(r"$\frac{1}{c}$", rotation=0)
+            plt.xscale("log")
+            plt.title(names[i])
+            plt.savefig(folder + 'inv_c_vs_k2_agg.svg', dpi=900)
+            plt.close()
 
             # Now for collapse plot
-            plots_collapse1 = Plotter(names[i])
-            inv_c_pred = Tim(k_2s,a,b)
-            plots_collapse1.add_plot(k_2s,inv_c_mean/inv_c_pred,yerr=errs/inv_c_pred)
-            save_name3 = 'Output/RealUniNets/' + names[i] + '/K_2_Inv_C_collapse1_clean.png'
-            plots_collapse1.plot(save=True,savename=save_name3)
+            inv_c_pred = Tim_2(k_2s,a,b)
+            y = inv_c_mean/inv_c_pred
+            y_err = errs/inv_c_pred
+            plt.figure()
+            plt.title(names[i])
+            # Shade +/- 0.05
+            plt.fill_between(k_2s, 1-0.05, 1+0.05, color='grey', alpha=0.2, label=r'$\pm 5\%$')
+            plt.errorbar(k_2s, y, yerr=y_err, fmt='.' ,markersize = 5,capsize=2,color='black')
+            plt.plot(k_2s, y,'ro', label = 'Data')
+            plt.xlabel("k")
+            plt.ylabel(r"$\frac{\hat{c}}{c}$", rotation=0)
+            plt.legend()
+            plt.savefig(folder + 'inv_c_vs_k2_collapse.svg', dpi=900)
+            plt.close()
+
+            plt.figure()
+            plt.title(names[i])
+            c_mean = 1/inv_c_mean
+            c_pred = 1/inv_c_pred
+            plt.plot(c_pred, c_mean, 'ro')
+            plt.ylabel(r"$c$", rotation=0)
+            plt.xlabel(r"$\hat{c}$", rotation=0)
+            # Add line at 45 degrees and shade +/- 5%
+            plt.plot(c_pred, c_pred, 'k--', label='Expected')
+            plt.fill_between(1/inv_c_pred, 1/inv_c_pred*(1-0.05), 1/inv_c_pred*(1+0.05), 
+                                color='grey', alpha=0.2, label=r'$\pm 5\%$')
+            plt.savefig(folder + 'c_vs_c_hatK2.svg', dpi=900)
+            plt.close('all')
+
             num_verticies = len(g.get_vertices())
             num_edges = len(g.get_edges())
 
@@ -77,12 +114,10 @@ def run_real(names, to_html=False, to_print=False):
             avg_degree = mean_k_2
             std_degree = np.std(k_2)
 
-            
             temp_df = pd.DataFrame({"N": num_verticies,"E":num_edges ,"1/ln(z)": a, "1/ln(z) err": a_err,
-                                    "Gamma": b, "Gamma err": b_err, "rchi_second": rchi, "pearson r": r,
-                                    "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp,
-                                    "av_degree": avg_degree, "std_degree": std_degree,
-                                    "av_counts": av_counts}, index=[names[i]])
+                                    "Gamma": b, "Gamma err": b_err, "rchi_second": rchi,
+                                    "av_second_degree": avg_degree, "std_second_degree": std_degree,
+                                    "av_counts_second_degree": av_counts}, index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
                 
         # Need to handle errors otherwise code stops. This is not best practice
@@ -132,7 +167,7 @@ if __name__ == "__main__":
 
     # Save dataframe to pickle and HTML
     df.to_pickle('Output/RealUniNets/RealUniNets_K2.pkl')
-    save_name_html = 'RealUnipartiteNets_2_results'
+    save_name_html = 'RealUnipartiteNets_2ndDeg_results'
     write_html(df, save_name_html)
 
     end = time.time()

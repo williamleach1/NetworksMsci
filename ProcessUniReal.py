@@ -199,7 +199,7 @@ def run_real(names, to_html=False):
 # Need to get column names for each network from the dataframe
 # Need to do after running get_networks.py
 Unipartite_df = pd.read_pickle('Data/unipartite.pkl')
-upper_node_limit = 100000 # takes around 1 minute per run with 50000
+upper_node_limit = 300000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
 
 unipartite_df = filter_num_verticies(Unipartite_df, upper_node_limit)
@@ -210,7 +210,6 @@ uni_network_names = unipartite_df.columns.values.tolist()
 MakeFolders(uni_network_names,'RealUniNets')
 # Run analysis on each network
 df = run_real(uni_network_names, to_html=False )
-
 
 # Save dataframe to html and pickle
 save_name_html = 'RealUnipartiteNets_results'

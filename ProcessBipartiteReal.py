@@ -44,7 +44,6 @@ def run_real(names):
                 name = names[i]
 
             output = process_bipartite(g,Real = True, Name=name)
-            k_uni, c_uni,popt_uni,pcov_uni, rchi_uni, r, rp, rs, rsp, statistics_dict_uni, mean_k_uni= process(g, 1, Real = True, Name = name )
             # Not a fan of having all these variables
             k_1 = output[0]
             c_1 = output[1]
@@ -74,6 +73,16 @@ def run_real(names):
 
             folder = 'Output/RealBipartiteNets/'+bipartite_network_names[i]+'/'
 
+            k_uni, c_uni,popt_uni,pcov_uni, rchi_uni, r, rp, rs, rsp, statistics_dict_uni, mean_k_uni= process(g, 1, Real = True, Name = name )
+            inv_c_uni = 1/c_uni
+            a_uni = popt_uni[0]
+            b_uni = popt_uni[1]
+            a_err_uni = np.sqrt(pcov_uni[0][0])
+            b_err_uni = np.sqrt(pcov_uni[1][1])
+            ks_uni, inv_c_mean_uni, errs_uni, stds_uni, counts_uni   = unpack_stat_dict(statistics_dict_uni)
+            av_counts = np.mean(counts_uni)
+
+
             plt.figure()
 
             # Uncomment to plot all (unaggregated) points
@@ -84,6 +93,10 @@ def run_real(names):
            
 
             plt.figure()
+            # Plot combined
+            plt.errorbar(ks_uni, inv_c_mean_uni, yerr=errs_uni, fmt='.' ,markersize = 5,capsize=2,color='black')
+            plt.plot(ks_uni, inv_c_mean_uni,'yo', label="Combined mean")
+
             # Plot group 1
             plt.errorbar(ks_1, inv_c_mean_1, yerr=errs_1, fmt='.' ,markersize = 5,capsize=2,color='black')
             plt.plot(ks_1, inv_c_mean_1,'ro', label="Group 1 mean")
@@ -92,23 +105,26 @@ def run_real(names):
             plt.errorbar(ks_2, inv_c_mean_2, yerr=errs_2, fmt='.' ,markersize = 5,capsize=2,color='black')
             plt.plot(ks_2, inv_c_mean_2,'bo', label="Group 2 mean")
 
-            # Plot fit for both groups
+
+            # Plot fit for both groups + combined
             plt.plot(k_1, Harry_1(k_1, *popt),'r--', label="Group 1 fit")
             plt.plot(k_2, Harry_2(k_2, *popt),'b--', label="Group 2 fit")
+            plt.plot(k_uni, Tim(k_uni, *popt_uni),'k--', label="Combined fit")
             plt.legend()
-            plt.xlabel("k")
+            plt.xlabel(r"$k$")
             plt.ylabel("1/c")
             plt.xscale("log")
             plt.suptitle(bipartite_network_names[i])
-            plt.title("a = %2f, b = %2f, alpha = %2f, rchi1=%2f, rchi2=%2f" % (popt[0], popt[1], popt[2], rchi_1, rchi_2))
-            
-            # Save plot
-            folder = 'Output/RealBipartiteNets/'+bipartite_network_names[i]+'/'
+            plt.title("a = %2f, b = %2f, alpha = %2f, rchi1=%2f, rchi2=%2f" 
+                        % (popt[0], popt[1], popt[2], rchi_1, rchi_2))
 
             # Also save in plots folder (gets messy but easy to view many plots)
             plt.savefig('plots/'+str(np.round(rchi_1,3))+'_'+str(np.round(rchi_2,3))+'inv_c_vs_k.png')
             plt.savefig(folder+'inv_c_vs_k_full_fit.png')
             plt.close()
+
+            
+
             # Get into dataframe to save results
             temp_df = pd.DataFrame({'mean k 1:': [mean_k_1], 'mean k 2:': [mean_k_2], 'rchi 1:': [rchi_1], 
                                 'rchi 2:': [rchi_2], 'r 1:': [r1], 'r 2:': [r2], 'rs 1:': [rs1], 

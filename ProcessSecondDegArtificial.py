@@ -19,7 +19,7 @@ def package_2(g):
     unagg = [k, 1/c]
     agg = [ks, inv_c_mean, errs]
     agg_pred = [ks, Tim(ks, *popt)]
-    return unagg, agg, agg_pred
+    return unagg, agg, agg_pred, g
 
 def get_density(g):
     num_verticies = len(g.get_vertices())
@@ -51,18 +51,18 @@ if __name__ == "__main__":
 
     for i in range(len(av_degs)):
         g = BA(N, av_degs[i])
-        unagg, agg, agg_pred = package_2(g)
+        unagg, agg, agg_pred, g = package_2(g)
         #unagg_HO, agg_HO, agg_pred_HO = package_HO(g)
 
         plt.figure()
         index = np.arange(len(unagg[0])).astype(float)
         # Color by index
-
-        plt.scatter(unagg[0], unagg[1],c=index,cmap = cm.plasma ,
+        N = len(unagg[0])
+        plt.scatter(np.log10(unagg[0]/N), unagg[1],c=index,cmap = cm.plasma ,
             label = r'$\langle k \rangle , N = $' + str(av_degs[i])+', '+str(N)) 
-        plt.xlabel(r"$k_{2}$")
+        plt.xlabel(r"$ln( k_{2}/{N} )$")
         plt.ylabel(r"$\frac{1}{c}$", rotation=0)
-        plt.xscale("log")
+        
         plt.legend()
         plt.savefig(folder + 'BA_Unagg_'+str(N)+'_'+str(av_degs[i])+ '.svg', dpi = 900)
         plt.close()
@@ -124,7 +124,7 @@ if __name__ == "__main__":
 
     for i in range(len(Ns)):
         g = BA(Ns[i], av_deg)
-        unagg, agg, agg_pred = package_2(g)
+        unagg, agg, agg_pred, g = package_2(g)
         #unagg_HO, agg_HO, agg_pred_HO = package_HO(g)
 
         plt.figure()
@@ -195,7 +195,7 @@ if __name__ == "__main__":
 
     for i in range(len(av_degs)):
         g = ER(N, av_degs[i])
-        unagg, agg, agg_pred = package_2(g)
+        unagg, agg, agg_pred, g = package_2(g)
         #unagg_HO, agg_HO, agg_pred_HO = package_HO(g)
 
         plt.figure()
@@ -263,7 +263,7 @@ if __name__ == "__main__":
 
     for i in range(len(Ns)):
         g = ER(Ns[i], av_deg)
-        unagg, agg, agg_pred = package_2(g)
+        unagg, agg, agg_pred, g = package_2(g)
         #unagg_HO, agg_HO, agg_pred_HO = package_HO(g)
 
         plt.figure()
