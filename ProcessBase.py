@@ -378,6 +378,7 @@ def get_mean_and_std_at_distances(all_distances, all_counts):
     # Find mean and standard deviation of counts at each distance
     mean_counts = []
     std_counts = []
+    err_counts = []
     # Loop over unique distances
     for u in unique_distances:
         # Find counts at each distance
@@ -396,7 +397,9 @@ def get_mean_and_std_at_distances(all_distances, all_counts):
         mean_counts.append(mean)
         std = np.std(counts_at_distance)
         std_counts.append(std)
-    return unique_distances, mean_counts, std_counts
+        err = std/np.sqrt(len(counts_at_distance))
+        err_counts.append(err)
+    return unique_distances, np.asarray(mean_counts), np.asarray(std_counts), np.asarray(err_counts)
 
 # function to aggregate over x to find mean and standard error in y
 #           --> remove if only appears once
@@ -858,6 +861,35 @@ def process_bipartite(g,Real = False,Name=None):
                 popt, errs, statistics_dict_1, statistics_dict_2]
 
     return output
+
+def process_BFS(g,Real = False,Name=None):
+    """Perform all analysis on BFS graph
+    Parameters
+    ----------
+    g : graph_tool graph
+        Graph to be analyzed
+    Returns
+    -------
+    output : list
+        List of all outputs from processing
+    """
+    if Real:
+        if os.path.exists('Data/Get_BFS/'+Name+'.pkl'):
+            with open('Data/Get_BFS/'+Name+'.pkl','rb') as f:
+                unq_dist, mean_count, std_counts, err_counts = pickle.load(f)
+        else:
+            os.makedirs('Data/Get_BFS',exist_ok=True)
+            all_dist, all_count, vs = get_all_counts_with_distance(g)
+            unq_dist, mean_count, std_counts, err_counts = get_mean_and_std_at_distances(all_dist, all_count)            
+            with open('Data/Get_BFS/'+Name+'.pkl','wb') as f:
+                pickle.dump((unq_dist, mean_count, std_counts, err_counts),f)
+    else:
+        all_dist, all_count, vs = get_all_counts_with_distance(g)
+        unq_dist, mean_count, std_counts, err_counts = get_mean_and_std_at_distances(all_dist, all_count)
+    
+    return unq_dist, mean_count, std_counts, err_counts
+
+
 
 # Function to generate BA model
 # Here we specify an average degree to define the model
