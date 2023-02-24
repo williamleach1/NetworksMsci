@@ -181,6 +181,7 @@ save_name_df = 'Output/RealBipartiteNets/RealBipartiteNets.pkl'
 df.to_pickle(save_name_df)
 save_name_html = 'ReaBipartiteNets_results'
 write_html(df, save_name_html)
+
 # Measure time taken to run to help predict for larger networks
 # Takes around 1-2 minute per run with 50000 upper node limit
 # Takes around 40 minutes - 1 hour per run with 200000 upper node limit

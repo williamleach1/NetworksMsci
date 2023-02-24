@@ -81,7 +81,7 @@ for tag in unique_tags:
     join_df[col_name] = [ tag in tags for tags in join_df['tags'] ]
 
 # Filter out multigraph. (might add these back in later)
-filtered_df = join_df.loc[join_df['Tag-Multigraph']==False,]
+filtered_df = join_df#.loc[join_df['Tag-Multigraph']==False,]
 # Filter out directed graphs.
 filtered_df = filtered_df.loc[filtered_df['is_directed']==False,]
 # Filter out Weighted graphs.

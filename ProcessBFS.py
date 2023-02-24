@@ -13,7 +13,7 @@ params =    {'font.size' : 16,
             'ytick.labelsize': 18,
             'axes.titlesize': 16,
             'figure.titlesize': 16,
-            'figure.figsize': (12, 9),}
+            'figure.figsize': (12, 6),}
 plt.rcParams.update(params)
 
 start = time.time()
