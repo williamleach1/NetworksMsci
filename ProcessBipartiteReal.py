@@ -25,10 +25,11 @@ def run_real(names):
     -------     
     df : dataframe
         Dataframe containing results"""
-    final_df = pd.DataFrame(columns=['mean k 1:', 'mean k 2:', 'rchi 1:','rchi 2:', 
-                                    'r 1:', 'r 2:', 'rs 1:', 'rs 2:','rp 1:','rp 2:', 'rsp 1',
-                                    'rsp 2:', 'a:', 'a error:', 'b:', 'b error:', 'alpha:', 
-                                    'alpha error:'])
+    final_df = pd.DataFrame(columns=['mean_k_1', 'mean_k_2', 'rchi_1', 
+                                'rchi_2', 'r_1', 'r_2', 'rs_1', 
+                                'rs_2', 'rp_1', 'rp_2', 'rsp_1',
+                                'rsp_2','a','a_error','b', 
+                                'b_error','alpha', 'alpha_error','rchi_uni'])
     error_report = []
     num = len(names)
     pbar = tqdm((range(num)))
@@ -94,29 +95,29 @@ def run_real(names):
 
             plt.figure()
             # Plot combined
-            plt.errorbar(ks_uni, inv_c_mean_uni, yerr=errs_uni, fmt='.' ,markersize = 5,capsize=2,color='black')
-            plt.plot(ks_uni, inv_c_mean_uni,'yo', label="Combined mean")
+            plt.errorbar(ks_uni, inv_c_mean_uni, yerr=errs_uni, fmt='.' ,markersize = 5,capsize=2,color='black', alpha=0.5)
+            plt.plot(ks_uni, inv_c_mean_uni,'go', label="Combined mean", alpha=0.8)
 
             # Plot group 1
-            plt.errorbar(ks_1, inv_c_mean_1, yerr=errs_1, fmt='.' ,markersize = 5,capsize=2,color='black')
-            plt.plot(ks_1, inv_c_mean_1,'ro', label="Group 1 mean")
+            plt.errorbar(ks_1, inv_c_mean_1, yerr=errs_1, fmt='.' ,markersize = 5,capsize=2,color='black', alpha=0.5)
+            plt.plot(ks_1, inv_c_mean_1,'ro', label="Group A mean", alpha=0.8)
 
             # Plot group 2
-            plt.errorbar(ks_2, inv_c_mean_2, yerr=errs_2, fmt='.' ,markersize = 5,capsize=2,color='black')
-            plt.plot(ks_2, inv_c_mean_2,'bo', label="Group 2 mean")
+            plt.errorbar(ks_2, inv_c_mean_2, yerr=errs_2, fmt='.' ,markersize = 5,capsize=2,color='black', alpha=0.5)
+            plt.plot(ks_2, inv_c_mean_2,'bo', label="Group B mean", alpha=0.8)
 
 
             # Plot fit for both groups + combined
-            plt.plot(k_1, Harry_1(k_1, *popt),'r--', label="Group 1 fit")
-            plt.plot(k_2, Harry_2(k_2, *popt),'b--', label="Group 2 fit")
+            plt.plot(k_1, Harry_1(k_1, *popt),'r--', label="Group A fit")
+            plt.plot(k_2, Harry_2(k_2, *popt),'b--', label="Group B fit")
             plt.plot(k_uni, Tim(k_uni, *popt_uni),'k--', label="Combined fit")
-            plt.legend()
-            plt.xlabel(r"$k$")
-            plt.ylabel("1/c")
+            plt.legend(fontsize = 30)
+            plt.xlabel(r"$k$", fontsize=30)
+            plt.ylabel(r"$\dfrac{1}{c}$", fontsize=30, rotation=0, labelpad=30)
             plt.xscale("log")
             plt.suptitle(bipartite_network_names[i])
-            plt.title("a = %2f, b = %2f, alpha = %2f, rchi1=%2f, rchi2=%2f" 
-                        % (popt[0], popt[1], popt[2], rchi_1, rchi_2))
+            rchi_latex = r'$\chi^2_{r}$'
+            plt.title('Combined '+ rchi_latex + ' = ' + str(np.round(rchi_uni,3)) + ', Group A '+ rchi_latex + ' = ' + str(np.round(rchi_1,3)) + ', Group B '+ rchi_latex + ' = ' + str(np.round(rchi_2,3)), fontsize=25)
 
             # Also save in plots folder (gets messy but easy to view many plots)
             plt.savefig('plots/'+str(np.round(rchi_1,3))+'_'+str(np.round(rchi_2,3))+'inv_c_vs_k.png')
@@ -126,11 +127,11 @@ def run_real(names):
             
 
             # Get into dataframe to save results
-            temp_df = pd.DataFrame({'mean k 1:': [mean_k_1], 'mean k 2:': [mean_k_2], 'rchi 1:': [rchi_1], 
-                                'rchi 2:': [rchi_2], 'r 1:': [r1], 'r 2:': [r2], 'rs 1:': [rs1], 
-                                'rs 2:': [rs2], 'rp 1:': [rp1], 'rp 2:': [rp2], 'rsp 1:': [rsp1],
-                                'rsp 2:': [rsp2], 'a:': [popt[0]], 'a error:': [errs[0]], 'b:': [popt[1]], 
-                                'b error:': [errs[1]], 'alpha:': [popt[2]], 'alpha error:': [errs[2]]},
+            temp_df = pd.DataFrame({'mean_k_1': [mean_k_1], 'mean_k_2': [mean_k_2], 'rchi_1': [rchi_1], 
+                                'rchi_2': [rchi_2], 'r_1': [r1], 'r_2': [r2], 'rs_1': [rs1], 
+                                'rs_2': [rs2], 'rp_1': [rp1], 'rp_2': [rp2], 'rsp_1': [rsp1],
+                                'rsp_2': [rsp2], 'a': [popt[0]], 'a_error': [errs[0]], 'b': [popt[1]], 
+                                'b_error': [errs[1]], 'alpha': [popt[2]], 'alpha_error': [errs[2]],'rchi_uni': [rchi_uni]},
                                 index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
         # Need to handle errors otherwise code stops. This is not best practice

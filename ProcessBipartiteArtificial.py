@@ -42,7 +42,7 @@ def run_real(gen_func, name, all_args=[], args_mean = [], to_html=False, to_prin
         g = gen_func(*args)
         g = clean_graph(g)
         print('Graph generated')
-        output = process_bipartite(g, to_print=False)
+        output = process_bipartite(g)
         
         # Not a fan of having all these variables
         k_1 = output[0]
@@ -80,22 +80,23 @@ def run_real(gen_func, name, all_args=[], args_mean = [], to_html=False, to_prin
 
         # Plot group 1
         plt.errorbar(ks_1, inv_c_mean_1, yerr=errs_1, fmt='.' ,markersize = 5,capsize=2,color='black')
-        plt.plot(ks_1, inv_c_mean_1,'ro', label="Group 1 mean")
+        plt.plot(ks_1, inv_c_mean_1,'ro', label="Group A mean")
 
         # Plot group 2
         plt.errorbar(ks_2, inv_c_mean_2, yerr=errs_2, fmt='.' ,markersize = 5,capsize=2,color='black')
-        plt.plot(ks_2, inv_c_mean_2,'bo', label="Group 2 mean")
+        plt.plot(ks_2, inv_c_mean_2,'bo', label="Group B mean")
 
         # Plot fit for both groups
-        plt.plot(k_1, Harry_1(k_1, *popt),'r--', label="Group 1 fit")
-        plt.plot(k_2, Harry_2(k_2, *popt),'b--', label="Group 2 fit")
-        plt.legend()
-        plt.xlabel("k")
-        plt.ylabel("1/c")
+        plt.plot(k_1, Harry_1(k_1, *popt),'r--', label="Group A fit")
+        plt.plot(k_2, Harry_2(k_2, *popt),'b--', label="Group B fit")
+        plt.legend(fontsize = 30)
+        rchi_latex = r'$\chi^{2}_{r}$'
+        plt.xlabel(r"$k$", fontsize=30)
+        plt.ylabel(r"$\dfrac{1}{c}$", fontsize=30, rotation=0, labelpad=30)
         plt.xscale("log")
         #plt.suptitle(bipartite_network_names[i])
-        plt.title("a = %2f, b = %2f, alpha = %2f, rchi1=%2f, rchi2=%2f" % (popt[0], popt[1], popt[2], rchi_1, rchi_2))
-        plt.suptitle(name)
+        plt.title("Group A "+rchi_latex+" = "+str(round(rchi_1,2))+", Group B "+rchi_latex+" = "+str(round(rchi_2,2)), fontsize=25)
+        #plt.suptitle(name)
         # Save plot
         # alternate args_mean and args
 
@@ -134,8 +135,8 @@ bipartiteER_args_mean = ['n1', 'n2', 'p']
 joint_args_mean = [bipartiteBA_args_mean, bipartiteER_args_mean]
 
 # Specify arguments for each model. Give as list of tuples for multiple runs
-args_BA = [(1, 3, 30000), (2, 3, 30000)]
-args_ER = [(20000, 10000, 0.0005), (20000, 8000, 0.00025)]
+args_BA = [(2, 3, 2000)]
+args_ER = [(50000, 10000, 0.0005), (50000, 5000, 0.00025)]
 joint_args = [args_BA, args_ER]
 
 MakeFolders(names, 'ArtificialBipartiteNets')

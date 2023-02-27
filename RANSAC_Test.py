@@ -46,7 +46,7 @@ plt.figure()
 i = 0
 #while num_outliers > 0.1*len(log_k):
 for i in range(1):
-    ransac = RANSACRegressor(residual_threshold = 1.9,max_trials=1000000)
+    ransac = RANSACRegressor(residual_threshold = 1.8,max_trials=1000000)
     ransac.fit(temp_log_k.reshape(-1,1), temp_inv_cs)
     inlier_mask = ransac.inlier_mask_
     outlier_mask = np.logical_not(inlier_mask)
@@ -60,7 +60,7 @@ for i in range(1):
     counts.append(count)
     print('Group ', i , ' has ', count, 'members')
 
-    plt.plot(np.exp((temp_log_k[inlier_mask])), temp_inv_cs[inlier_mask], '.', alpha = 0.5)
+    plt.plot(np.exp((temp_log_k[inlier_mask])), temp_inv_cs[inlier_mask], 'o',color='darkturquoise', alpha = 0.5)
 
     temp_log_k = temp_log_k[outlier_mask]
     temp_inv_cs = temp_inv_cs[outlier_mask]
@@ -69,11 +69,14 @@ for i in range(1):
     num_outliers = len(temp_log_k)
     #i += 1
  
-plt.plot(np.exp(temp_log_k), temp_inv_cs, '.', alpha = 0.5)
+plt.plot(np.exp(temp_log_k), temp_inv_cs, 'o', color='gold', alpha = 0.5)
 plt.xscale('log')
-plt.ylabel('1/c')
-plt.xlabel('k')
-plt.legend(['Inliers', 'Outliers'])
+# Add padding between the axes and the axis labels
+
+plt.ylabel(r'$\dfrac{1}{c}$', fontsize=20, rotation=0, labelpad=20)
+plt.xlabel(r'$k$', fontsize=20)
+plt.legend(['Inliers', 'Outliers'], fontsize=15)
+plt.tight_layout()
 plt.savefig('ransac_result_graph.png',dpi=900)
 plt.show()
 

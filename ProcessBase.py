@@ -653,7 +653,7 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
         sigma = stats_dict[k[i]][2]
         count = stats_dict[k[i]][3]
         # Need to not use if sigma = 0 (possible for identical nodes)
-        if sigma > 0.01:
+        if sigma > 0.001:
             # if count > 1 add to list as standard deviation is not 0
             if count>1:
                 # add to new lists
@@ -1041,13 +1041,18 @@ def BipartiteBA(m_1,m_2,n, n_start=10):
 # Function to generate ER random bipartite graph
 def BipartiteER(n1, n2, p):
     g = bipartite.random_graph(n1, n2,p, directed=False)
+    
+    
 
+    # Save graph to file
     nx.write_edgelist(g, "bipartite.txt", data=False)
 
+    
     g = gt.load_graph_from_csv("bipartite.txt", directed=False, csv_options={"delimiter": " "})
 
-    os.close("bipartite.txt")
+    # Remove file
     os.remove("bipartite.txt")
+    # CLose file
     
     return g
 

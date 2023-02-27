@@ -66,7 +66,7 @@ find_normallity(df_uni_fit_features)
 
 median_rounded = round(find_median(df_uni_fit_features, 'rchi'),2)
 
-filter_function = get_lambda_function(4)
+filter_function = get_lambda_function(median_rounded)
 
 df_uni_fit_class = deepcopy(df_uni_fit_features)
 
@@ -121,9 +121,33 @@ for i in range(len(predictions)):
 accuracy = metrics.accuracy_score(Y_test_class, predictions)
 print("Accuracy: %.2f%%" % (accuracy * 100.0))
 
+# plot feature importance
 
 
+# get the feature importance and display it and feature name
+importance = model.feature_importances_
+features = X.columns.values.tolist()
 
+
+for i,v in enumerate(importance):
+    print('-----------------------------------')
+    print('Feature: %0d, Score: %.5f' % (i,v))
+    print('Feature Name: ',features[i])
+
+feature_importance = abs(model.feature_importances_)
+feature_importance = 100.0 * (feature_importance / feature_importance.max())
+sorted_idx = np.argsort(feature_importance)
+pos = np.arange(sorted_idx.shape[0]) + .5
+
+featfig = plt.figure()
+featax = featfig.add_subplot(1, 1, 1)
+featax.barh(pos, feature_importance[sorted_idx], align='center')
+featax.set_yticks(pos)
+featax.set_yticklabels(np.array(X.columns)[sorted_idx], fontsize=8)
+featax.set_xlabel('Relative Feature Importance')
+
+plt.tight_layout()   
+plt.show()
 
 '''
 

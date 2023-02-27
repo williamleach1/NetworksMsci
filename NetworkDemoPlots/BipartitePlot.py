@@ -174,8 +174,10 @@ for i in range(len(layers)):
 nx.draw(g, pos, ax = ax,node_color=node_colours, width = widths, edge_color = cols, linewidths = 1)
 
 # add a custom legend with the node colours
+groups = ['A', 'B']
+
 for i in range(2):
-    ax.scatter([], [], c=all_cols[i],s=200, label='Group ' + str(i+1))
+    ax.scatter([], [], c=all_cols[i],s=200, label='Group ' + groups[i])
 ax.legend(scatterpoints=1, frameon=False, labelspacing=1,loc='upper center', bbox_to_anchor=(0.5, 1.1),
             ncol=3, fancybox=True, shadow=True, fontsize = 18)
 

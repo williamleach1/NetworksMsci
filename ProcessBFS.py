@@ -13,12 +13,12 @@ params =    {'font.size' : 16,
             'ytick.labelsize': 18,
             'axes.titlesize': 16,
             'figure.titlesize': 16,
-            'figure.figsize': (12, 6),}
+            'figure.figsize': (12, 12),}
 plt.rcParams.update(params)
 
 start = time.time()
 
-def L_nk(av_k,N,z):
+def L_nk(ks,N,z):
     """Calculate L_nk
     Parameters
     ----------
@@ -32,7 +32,7 @@ def L_nk(av_k,N,z):
     -------
     L_nk : float
         L_nk"""
-    L = np.log(N*(z-1)/av_k)/np.log(z)
+    L = np.log(N*(z-1)/ks)/np.log(z)
     return L
 
 def n_l(l,z,av_k,L):
@@ -87,25 +87,34 @@ def run_bfs(g, Real, Name = None):
     z = z_u.n
     z_err = z_u.s
 
-    L = L_nk(k, g.num_vertices(), z)
-    n = n_l(g.num_vertices(), z, k, L)
+    Ls = L_nk(k, g.num_vertices(), z)
+    Mean_L = np.mean(Ls)
+    Mean_L_err = np.std(Ls)#/np.sqrt(len(Ls))
+
+    max_z = z + z_err
+    min_z = z - z_err
 
     # Now get the BFS results
     unq_dist, mean_count, std_count, err_count  = process_BFS(g, Real = True, Name = name)
     av_k = np.mean(k)
-    Ls = L_nk(av_k, g.num_vertices(), z)
+    av_k_err = np.std(k)#/np.sqrt(len(k))
     dist = np.linspace(0, max(unq_dist)+1,100)
-    ns = n_l(dist, z, av_k, Ls)
+    
+    ns = n_l(dist, z, av_k, Mean_L)
+    max_ns = n_l(dist, max_z, av_k+av_k_err, Mean_L+Mean_L_err)
+    min_ns = n_l(dist, min_z, av_k-av_k_err, Mean_L-Mean_L_err)
 
     # Now plot the results
-    fig, ax = plt.subplots(1,2)
-    ax[0].errorbar(unq_dist, mean_count, yerr = err_count, fmt = 'o', label = 'BFS')
-    ax[0].plot(dist, ns,'k--' , label = 'Numerical')
-    ax[0].set_xlabel('Distance')
-    ax[0].set_ylabel('Number of nodes')
-    ax[0].set_title('BFS for {}'.format(Name))
-    ax[0].legend()
-
+    fig, ax = plt.subplots(1,1)
+    ax.errorbar(unq_dist, mean_count, yerr = std_count, fmt = 'o', capsize = 5,color='Red', label = 'Numerical')
+    ax.plot(dist, ns,'k--' , label = 'From Fit')
+    ax.fill_between(dist, min_ns, max_ns,color='Blue', alpha = 0.2, label = 'Fit from '+ r'$\pm 1\sigma$')
+    ax.set_xlabel(r'$l$', fontsize = 30, labelpad = 20)
+    ax.set_ylabel(r'$n(l)$', fontsize = 30,rotation = 0, labelpad = 20)
+    #ax.set_title('BFS for {}'.format(Name))
+    #ax.set_title('ER with 10000 nodes and Average degree = 10')
+    ax.legend(fontsize = 25)
+    '''
     ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
     ax[1].errorbar(ks, inv_c_mean, yerr = errs, fmt = 'o', label = 'Data')
     ax[1].plot(ks, Tim(ks, *popt), 'k--', label = 'Fit')
@@ -115,6 +124,7 @@ def run_bfs(g, Real, Name = None):
     ax[1].legend()
     ax[1].set_xscale('log')
     fig.suptitle('z = {} +/- {}, rchi = {}'.format(z, z_err, rchi))
+    '''
     if Real:
         folder = 'Output/RealUniNets/' + Name + '/'
     else:

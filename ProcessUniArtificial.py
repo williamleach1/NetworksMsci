@@ -21,7 +21,7 @@ def package(g):
     unagg = [k, 1/c]
     agg = [ks, inv_c_mean, errs]
     agg_pred = [ks, Tim(ks, *popt)]
-    return unagg, agg, agg_pred
+    return unagg, agg, agg_pred, rchi
 
 def package_HO(g):
     g = clean_graph(g)
@@ -48,7 +48,7 @@ MakeFolders(names, 'ArtificialUniNets')
 
 # Plot one for BA - various mean k for one N
 # Also do a collapse with multiple displayed on one plot
-
+'''
 folder = "Output/ArtificialUniNets/BA/"
 figA, axsA = plt.subplots(1,1)
 
@@ -260,24 +260,24 @@ axs[1].set_ylabel(r"$c$", rotation=0)
 axs[1].legend()
 figA.savefig(folder + 'Av_Deg_ER_N20000.svg', dpi = 900)
 figs.savefig(folder+ 'Av_Deg_ER_collapse_N20000.svg', dpi= 900)
-
+'''
 folder = "Output/ArtificialUniNets/ER/"
 figA, axsA = plt.subplots(1,1)
 
 figs, axs = plt.subplots(1, 2, figsize=(15, 10))
 
-Ns = [1000, 2000, 4000, 8000]
+Ns = [10000, 20000, 40000, 80000, 160000]
 av_deg = 10
 
 for i in range(len(Ns)):
     g = ER(Ns[i], av_deg)
-    unagg, agg, agg_pred = package(g)
+    unagg, agg, agg_pred,rchi = package(g)
     #unagg_HO, agg_HO, agg_pred_HO = package_HO(g)
 
     plt.figure()
     plt.plot(unagg[0], unagg[1], 'o', label = r'$\langle k \rangle , N = $' + str(Ns[i])+', '+str(av_deg)) 
     plt.xlabel(r"$k$")
-    plt.ylabel(r"$\frac{1}{c}$", rotation=0)
+    plt.ylabel(r"$\dfrac{1}{c}$", rotation=0)
     plt.xscale("log")
     plt.legend()
     plt.savefig(folder + 'ER_Unagg_'+str(av_deg)+'_'+str(Ns[i])+ '.svg', dpi = 900)
@@ -287,8 +287,10 @@ for i in range(len(Ns)):
     ks, inv_c_mean, errs = agg
     ks, inv_c_pred = agg_pred
     #ks_HO, inv_c_pred_HO = agg_pred_HO
-    axsA.errorbar(ks, inv_c_mean, yerr=errs, fmt='.' ,markersize = 5,capsize=2,color='black')
-    axsA.plot(ks, inv_c_mean,'o', label=r'$N = $' + str(Ns[i]))
+    rchi_latex = r'$\chi^{2}_{r}$'
+
+    axsA.errorbar(ks, inv_c_mean, yerr=errs, fmt='.' ,markersize = 5,capsize=5,color='black')
+    axsA.plot(ks, inv_c_mean,'o', label=r'$N = $' + str(Ns[i])+', '+rchi_latex+' = '+str(round(rchi,3)))
     axsA.plot(ks, inv_c_pred,'k--')
     #axsA.plot(ks_HO, inv_c_pred_HO,'b--')
 
@@ -301,9 +303,9 @@ for i in range(len(Ns)):
     c_pred = 1/inv_c_pred
     axs[1].plot(c_pred, c_mean, 'o', label = r'$N = $' + str(Ns[i]))
 
-axsA.legend()
-axsA.set_xlabel(r"$k$")
-axsA.set_ylabel(r"$\frac{1}{c}$", rotation=0)
+axsA.legend(fontsize = 20)
+axsA.set_xlabel(r"$k$", rotation=0, labelpad=20, fontsize=25)
+axsA.set_ylabel(r"$\dfrac{1}{c}$", rotation=0, labelpad=20, fontsize=25)
 axsA.set_xscale("log")
 
 min_k, max_k = axs[0].get_xlim()
