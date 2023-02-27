@@ -84,5 +84,5 @@ g.vertex_properties['inlier'] = v_group
 
 inlier = g.vertex_properties['inlier']
 
-gt.graph_draw(g, pos=pos, vertex_fill_color=inlier,output='ransac_result.png')
+gt.graph_draw(g, pos=pos, vertex_fill_color=inlier,output='ransac_result.svg')
 
