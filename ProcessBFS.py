@@ -98,22 +98,27 @@ def run_bfs(g, Real, Name = None):
     unq_dist, mean_count, std_count, err_count  = process_BFS(g, Real = True, Name = name)
     av_k = np.mean(k)
     av_k_err = np.std(k)#/np.sqrt(len(k))
-    dist = np.linspace(0, max(unq_dist)+1,100)
+    #dist = np.linspace(0, max(unq_dist)+1,100)
     
-    ns = n_l(dist, z, av_k, Mean_L)
-    max_ns = n_l(dist, max_z, av_k+av_k_err, Mean_L+Mean_L_err)
-    min_ns = n_l(dist, min_z, av_k-av_k_err, Mean_L-Mean_L_err)
+    ns = n_l(unq_dist, z, av_k, Mean_L)
+    max_ns = n_l(unq_dist, max_z, av_k+av_k_err, Mean_L+Mean_L_err)
+    min_ns = n_l(unq_dist, min_z, av_k-av_k_err, Mean_L-Mean_L_err)
 
     # Now plot the results
     fig, ax = plt.subplots(1,1)
     ax.errorbar(unq_dist, mean_count, yerr = std_count, fmt = 'o', capsize = 5,color='Red', label = 'Numerical')
-    ax.plot(dist, ns,'k--' , label = 'From Fit')
-    ax.fill_between(dist, min_ns, max_ns,color='Blue', alpha = 0.2, label = 'Fit from '+ r'$\pm 1\sigma$')
+    ax.plot(unq_dist, ns,'k--' , label = 'From Fit')
+    ax.fill_between(unq_dist, min_ns, max_ns,color='Blue', alpha = 0.2, label = 'Fit from '+ r'$\pm 1\sigma$')
     ax.set_xlabel(r'$l$', fontsize = 30, labelpad = 20)
     ax.set_ylabel(r'$n(l)$', fontsize = 30,rotation = 0, labelpad = 20)
     #ax.set_title('BFS for {}'.format(Name))
     #ax.set_title('ER with 10000 nodes and Average degree = 10')
     ax.legend(fontsize = 25)
+
+
+
+
+
     '''
     ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
     ax[1].errorbar(ks, inv_c_mean, yerr = errs, fmt = 'o', label = 'Data')
@@ -130,7 +135,18 @@ def run_bfs(g, Real, Name = None):
     else:
         folder = 'Output/ArtificialUniNets/'+Name+'/'
     fig.savefig(folder+'bfs.svg', dpi=900)
+    plt.show()
     plt.close()
+    # find cumulative sum
+    cumsum = np.cumsum(mean_count)
+    cumsum_fit = np.cumsum(ns)
+    # plot cumulative sum
+    fig, ax = plt.subplots(1,1)
+    ax.errorbar(unq_dist, cumsum, yerr = std_count, fmt = 'o', capsize = 5,color='Red', label = 'Numerical')
+    ax.plot(unq_dist, cumsum_fit,'k--' , label = 'From Fit')
+    plt.show()
+
+
 
 if __name__ == '__main__':
     # Load in unipartite and run for each real networks
