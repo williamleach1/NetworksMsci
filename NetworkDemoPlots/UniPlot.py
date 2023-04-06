@@ -35,6 +35,7 @@ def bfs_layers(G, sources):
 number_per_ring = [1, 3, 10, 18, 8]
 tree_edges_per_node_per_ring = [[3],[4,2,4],[1,2,2,2,3,1,2,1,3,1],[0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,0,1,0]]
 
+
 # create list of nodes in each ring
 nodes_in_ring = []
 for i in range(len(number_per_ring)):
@@ -60,7 +61,8 @@ for i in range(num_rings):
                 print((source,target))
                 edges.append((source,target))
                 n += 1
-            
+
+
 
 nodes = [i for i in range(sum(number_per_ring))]
 print(nodes)
@@ -70,16 +72,14 @@ tree_edges = deepcopy(edges)
 
 fig, ax = plt.subplots(1,1, figsize = (10,10))
 #g = nx.watts_strogatz_graph(40,4,0.5)  #nx.karate_club_graph()
-
+#fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+#ax.set_aspect("equal")
 
 
 g = nx.Graph()
 g.add_nodes_from(nodes)
 g.add_edges_from(edges)
 layers = dict(enumerate(bfs_layers(g, [0])))
-
-
-
 
 all_cols = ['lightcoral', 'cornflowerblue', 'limegreen', 'violet', 'gold', 'teal', 'slateblue']
 node_colours = []

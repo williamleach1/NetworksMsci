@@ -12,7 +12,7 @@ params =    {'font.size' : 16,
             'ytick.labelsize': 18,
             'axes.titlesize': 16,
             'figure.titlesize': 16,
-            'figure.figsize': (12, 9),}
+            'figure.figsize': (6, 4),}
 plt.rcParams.update(params)
 
 start = time.time()
@@ -70,8 +70,9 @@ def run_real(names, to_html=False):
             plt.plot(k, inv_c,'r.', label="Group 1", alpha=0.1)
             plt.xscale("log")
             plt.xlabel(r"$k$")
-            plt.ylabel(r"$\frac{1}{c}$", rotation=0)
-            plt.savefig(folder + 'inv_c_vs_k_unagg.svg', dpi=900)
+            plt.ylabel(r"$\dfrac{1}{c}$", rotation=0, labelpad=20)
+            plt.subplots_adjust(left=0.15, bottom=0.15, right=0.98, top=0.98)
+            plt.savefig(folder + 'inv_c_vs_k_unagg.png', dpi=300)
             plt.close()
             # Now for aggregated data plots
             plt.figure()
@@ -81,9 +82,10 @@ def run_real(names, to_html=False):
             plt.plot(ks, Tim(ks, *popt),'b--', label="Fit to data")
             plt.legend()
             plt.xlabel(r"$k$")
-            plt.ylabel(r"$\frac{1}{c}$", rotation=0)
+            plt.ylabel(r"$\dfrac{1}{c}$", rotation=0, labelpad=20)
             plt.xscale("log")
-            plt.title(names[i])
+            #plt.title(names[i])
+            plt.subplots_adjust(left=0.15, bottom=0.15, right=0.98, top=0.98)
             plt.savefig(folder + 'inv_c_vs_k_agg.svg', dpi=900)
             plt.close()
 
@@ -97,9 +99,10 @@ def run_real(names, to_html=False):
             plt.fill_between(ks, 1-0.05, 1+0.05, color='grey', alpha=0.2, label=r'$\pm 5\%$')
             plt.errorbar(ks, y, yerr=y_err, fmt='.' ,markersize = 5,capsize=2,color='black')
             plt.plot(ks, y,'ro', label = 'Data')
-            plt.xlabel("k")
-            plt.ylabel(r"$\frac{\hat{c}}{c}$", rotation=0)
+            plt.xlabel(r"$k$")
+            plt.ylabel(r"$\dfrac{\hat{c}}{c}$", rotation=0, labelpad=20)
             plt.legend()
+            plt.subplots_adjust(left=0.15, bottom=0.15, right=0.98, top=0.98)
             plt.savefig(folder + 'inv_c_vs_k_collapse.svg', dpi=900)
             plt.close()
 
@@ -108,12 +111,12 @@ def run_real(names, to_html=False):
             c_mean = 1/inv_c_mean
             c_pred = 1/inv_c_pred
             plt.plot(c_pred, c_mean, 'ro')
-            plt.ylabel(r"$c$", rotation=0)
+            plt.ylabel(r"$c$", rotation=0, labelpad=20)
             plt.xlabel(r"$\hat{c}$", rotation=0)
             # Add line at 45 degrees and shade +/- 5%
             plt.plot(c_pred, c_pred, 'k--', label='Expected')
             plt.fill_between(1/inv_c_pred, 1/inv_c_pred*(1-0.05), 1/inv_c_pred*(1+0.05), color='grey', alpha=0.2, label=r'$\pm 5\%$')
-
+            plt.subplots_adjust(left=0.15, bottom=0.15, right=0.98, top=0.98)
             plt.savefig(folder + 'c_vs_c_hat.svg', dpi=900)
             plt.close()
 
