@@ -98,17 +98,17 @@ def run_bfs(g, Real, Name = None):
     unq_dist, mean_count, std_count, err_count  = process_BFS(g, Real = True, Name = name)
     av_k = np.mean(k)
     av_k_err = np.std(k)#/np.sqrt(len(k))
-    #dist = np.linspace(0, max(unq_dist)+1,100)
+    dist = np.linspace(0, max(unq_dist)+1,100)
     
-    ns = n_l(unq_dist, z, av_k, Mean_L)
-    max_ns = n_l(unq_dist, max_z, av_k+av_k_err, Mean_L+Mean_L_err)
-    min_ns = n_l(unq_dist, min_z, av_k-av_k_err, Mean_L-Mean_L_err)
+    ns = n_l(dist, z, av_k, Mean_L)
+    max_ns = n_l(dist, max_z, av_k+av_k_err, Mean_L+Mean_L_err)
+    min_ns = n_l(dist, min_z, av_k-av_k_err, Mean_L-Mean_L_err)
 
     # Now plot the results
     fig, ax = plt.subplots(1,1)
     ax.errorbar(unq_dist, mean_count, yerr = std_count, fmt = 'o', capsize = 5,color='Red', label = 'Numerical')
-    ax.plot(unq_dist, ns,'k--' , label = 'From Fit')
-    ax.fill_between(unq_dist, min_ns, max_ns,color='Blue', alpha = 0.2, label = 'Fit from '+ r'$\pm 1\sigma$')
+    ax.plot(dist, ns,'k--' , label = 'From Fit')
+    ax.fill_between(dist, min_ns, max_ns,color='Blue', alpha = 0.2, label = 'Fit from '+ r'$\pm 1\sigma$')
     ax.set_xlabel(r'$l$', fontsize = 30, labelpad = 20)
     ax.set_ylabel(r'$n(l)$', fontsize = 30,rotation = 0, labelpad = 20)
     #ax.set_title('BFS for {}'.format(Name))
@@ -142,8 +142,8 @@ def run_bfs(g, Real, Name = None):
     cumsum_fit = np.cumsum(ns)
     # plot cumulative sum
     fig, ax = plt.subplots(1,1)
-    ax.errorbar(unq_dist, cumsum, yerr = std_count, fmt = 'o', capsize = 5,color='Red', label = 'Numerical')
-    ax.plot(unq_dist, cumsum_fit,'k--' , label = 'From Fit')
+    ax.errorbar(dist, cumsum, yerr = std_count, fmt = 'o', capsize = 5,color='Red', label = 'Numerical')
+    ax.plot(dist, cumsum_fit,'k--' , label = 'From Fit')
     plt.show()
 
 
