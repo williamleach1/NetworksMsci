@@ -1,18 +1,29 @@
 from ProcessBase import *
 import warnings
 import scipy as sp
+plt.rcParams.update({
+    'font.size': 10,
+    'figure.figsize': (5, 3.5),
+    'figure.subplot.left': 0.13,
+    'figure.subplot.right': 0.98,
+    'figure.subplot.bottom': 0.13,
+    'figure.subplot.top': 0.98,
+    'axes.labelsize': 10,
+    'axes.titlesize': 10,
+    'legend.fontsize': 10,
+    'xtick.labelsize': 10,
+    'ytick.labelsize': 10,
+    'axes.linewidth': 0.5,
+    'lines.linewidth': 0.5,
+    'lines.markersize': 2,
+})
+
+
+
 
 warnings.filterwarnings("error")
 
-params =    {'font.size' : 16,
-            'axes.labelsize':16,
-            'legend.fontsize': 14,
-            'xtick.labelsize': 14,
-            'ytick.labelsize': 18,
-            'axes.titlesize': 16,
-            'figure.titlesize': 16,
-            'figure.figsize': (16, 12),}
-plt.rcParams.update(params)
+
 
 start = time.time()
 def run_real(names):
@@ -29,7 +40,7 @@ def run_real(names):
                                 'rchi_2', 'r_1', 'r_2', 'rs_1', 
                                 'rs_2', 'rp_1', 'rp_2', 'rsp_1',
                                 'rsp_2','a','a_error','b', 
-                                'b_error','alpha', 'alpha_error','rchi_uni'])
+                                'b_error','alpha', 'alpha_error','rchi_uni','rchi','N_1','N_2'])
     error_report = []
     num = len(names)
     pbar = tqdm((range(num)))
@@ -47,9 +58,11 @@ def run_real(names):
             output = process_bipartite(g,Real = True, Name=name)
             # Not a fan of having all these variables
             k_1 = output[0]
+            N_1 =len(k_1)
             c_1 = output[1]
             inv_c_1 = output[2]
             k_2 = output[3]
+            N_2 = len(k_2)
             c_2 = output[4]
             inv_c_2 = output[5]
             mean_k_1 = output[6]
@@ -68,10 +81,13 @@ def run_real(names):
             errs = output[19]
             statistics_dict_1 = output[20]
             statistics_dict_2 = output[21]
+            rchi_combined = output[22]
 
             ks_1, inv_c_mean_1, errs_1, stds_1, counts_1 = unpack_stat_dict(statistics_dict_1)
             ks_2, inv_c_mean_2, errs_2, stds_2, counts_2 = unpack_stat_dict(statistics_dict_2)
 
+
+            
             folder = 'Output/RealBipartiteNets/'+bipartite_network_names[i]+'/'
 
             k_uni, c_uni,popt_uni,pcov_uni, rchi_uni, r, rp, rs, rsp, statistics_dict_uni, mean_k_uni= process(g, 1, Real = True, Name = name )
@@ -95,33 +111,33 @@ def run_real(names):
 
             plt.figure()
             # Plot combined
-            plt.errorbar(ks_uni, inv_c_mean_uni, yerr=errs_uni, fmt='.' ,markersize = 5,capsize=2,color='black', alpha=0.5)
-            plt.plot(ks_uni, inv_c_mean_uni,'go', label="Combined mean", alpha=0.8)
+            plt.errorbar(ks_uni, inv_c_mean_uni, yerr=errs_uni, fmt='o' ,markersize = 3,capsize=2,color='green', alpha=1, mfc= 'none', mew=0.5, elinewidth=1, label = 'Combined')
+            #plt.plot(ks_uni, inv_c_mean_uni,'go', label="Combined mean", alpha=0.8)
 
             # Plot group 1
-            plt.errorbar(ks_1, inv_c_mean_1, yerr=errs_1, fmt='.' ,markersize = 5,capsize=2,color='black', alpha=0.5)
-            plt.plot(ks_1, inv_c_mean_1,'ro', label="Group A mean", alpha=0.8)
+            plt.errorbar(ks_1, inv_c_mean_1, yerr=errs_1, fmt='o' ,markersize = 3,capsize=2,color='salmon', alpha=1,mfc= 'none', mew=0.5, elinewidth=1, label = 'Group A')
+            #plt.plot(ks_1, inv_c_mean_1,'ro', label="Group A mean", alpha=0.8)
 
             # Plot group 2
-            plt.errorbar(ks_2, inv_c_mean_2, yerr=errs_2, fmt='.' ,markersize = 5,capsize=2,color='black', alpha=0.5)
-            plt.plot(ks_2, inv_c_mean_2,'bo', label="Group B mean", alpha=0.8)
+            plt.errorbar(ks_2, inv_c_mean_2, yerr=errs_2, fmt='o' ,markersize = 3,capsize=2,color='cornflowerblue', alpha=1,mfc= 'none', mew=0.5, elinewidth=1, label = 'Group B')
+            #plt.plot(ks_2, inv_c_mean_2,'bo', label="Group B mean", alpha=0.8)
 
 
             # Plot fit for both groups + combined
             plt.plot(k_1, Harry_1(k_1, *popt),'r--', label="Group A fit")
             plt.plot(k_2, Harry_2(k_2, *popt),'b--', label="Group B fit")
             plt.plot(k_uni, Tim(k_uni, *popt_uni),'k--', label="Combined fit")
-            plt.legend(fontsize = 30)
-            plt.xlabel(r"$k$", fontsize=30)
-            plt.ylabel(r"$\dfrac{1}{c}$", fontsize=30, rotation=0, labelpad=30)
+            plt.legend()
+            plt.xlabel(r"$k$")
+            plt.ylabel(r"$\dfrac{1}{c}$", rotation = 0, labelpad = 10)
             plt.xscale("log")
-            plt.suptitle(bipartite_network_names[i])
+            #plt.suptitle(bipartite_network_names[i])
             rchi_latex = r'$\chi^2_{r}$'
-            plt.title('Combined '+ rchi_latex + ' = ' + str(np.round(rchi_uni,3)) + ', Group A '+ rchi_latex + ' = ' + str(np.round(rchi_1,3)) + ', Group B '+ rchi_latex + ' = ' + str(np.round(rchi_2,3)), fontsize=25)
+            #plt.title('Combined '+ rchi_latex + ' = ' + str(np.round(rchi_uni,3)) + ', Group A '+ rchi_latex + ' = ' + str(np.round(rchi_1,3)) + ', Group B '+ rchi_latex + ' = ' + str(np.round(rchi_2,3)), fontsize=25)
 
             # Also save in plots folder (gets messy but easy to view many plots)
             plt.savefig('plots/'+str(np.round(rchi_1,3))+'_'+str(np.round(rchi_2,3))+'inv_c_vs_k.png')
-            plt.savefig(folder+'inv_c_vs_k_full_fit.png')
+            plt.savefig(folder+'inv_c_vs_k_full_fit.png', dpi=900)
             plt.close()
 
             
@@ -131,8 +147,8 @@ def run_real(names):
                                 'rchi_2': [rchi_2], 'r_1': [r1], 'r_2': [r2], 'rs_1': [rs1], 
                                 'rs_2': [rs2], 'rp_1': [rp1], 'rp_2': [rp2], 'rsp_1': [rsp1],
                                 'rsp_2': [rsp2], 'a': [popt[0]], 'a_error': [errs[0]], 'b': [popt[1]], 
-                                'b_error': [errs[1]], 'alpha': [popt[2]], 'alpha_error': [errs[2]],'rchi_uni': [rchi_uni]},
-                                index=[names[i]])
+                                'b_error': [errs[1]], 'alpha': [popt[2]], 'alpha_error': [errs[2]],'rchi_uni': [rchi_uni],
+                                'rchi':[rchi_combined],'N_1':[N_1],'N_2':[N_2]},index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
         # Need to handle errors otherwise code stops. This is not best practice
         # to simply skip over error but we display failed networks at the end.
@@ -164,7 +180,7 @@ def run_real(names):
 # Need to get column names for each network from the dataframe
 # Need to do after running get_networks.py
 Bipartite_df = pd.read_pickle('Data/bipartite.pkl')
-upper_node_limit = 200000 # takes around 1 minute per run with 50000
+upper_node_limit = 300000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
 
 Bipartite_df = filter_num_verticies(Bipartite_df, upper_node_limit)

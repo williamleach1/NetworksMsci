@@ -5,15 +5,22 @@ warnings.filterwarnings("error")
 import graph_tool.all as gt
 from graph_tool import correlations, generation
 
-params =    {'font.size' : 16,
-            'axes.labelsize':16,
-            'legend.fontsize': 14,
-            'xtick.labelsize': 14,
-            'ytick.labelsize': 18,
-            'axes.titlesize': 16,
-            'figure.titlesize': 16,
-            'figure.figsize': (6, 4),}
-plt.rcParams.update(params)
+plt.rcParams.update({
+    'font.size': 10,
+    'figure.figsize': (3.5, 2.8),
+    'figure.subplot.left': 0.2,
+    'figure.subplot.right': 0.98,
+    'figure.subplot.bottom': 0.15,
+    'figure.subplot.top': 0.98,
+    'axes.labelsize': 10,
+    'axes.titlesize': 10,
+    'legend.fontsize': 8,
+    'xtick.labelsize': 10,
+    'ytick.labelsize': 10,
+    'axes.linewidth': 0.5,
+    'lines.linewidth': 0.5,
+    'lines.markersize': 2,
+})
 
 start = time.time()
 def run_real(names, to_html=False):
@@ -30,7 +37,7 @@ def run_real(names, to_html=False):
     columns =   ["N", "E", "1/ln(z)", "1/ln(z) err", "Beta", "Beta err", "rchi",
                  "pearson r", "pearson p-val", "spearmans r", "spearmans p-val", 
                  "Beta fit", "Beta Fit err" ,"density", "av_degree", "clustering", 
-                 "L", "SWI", "asortivity", "std_degree", "av_counts"]
+                 "L", "SWI", "asortivity", "std_degree", "av_counts", "median_k","r^2"]
 
     final_df = pd.DataFrame(columns=columns)
     
@@ -53,6 +60,9 @@ def run_real(names, to_html=False):
             # Now process the graph
             k, c,popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k= process(g, 1, Real = True, Name = name )
             inv_c = 1/c
+
+            r2 = calculate_r_squared(k, inv_c, Tim, popt)
+
             a = popt[0]
             b = popt[1]
             a_err = np.sqrt(pcov[0][0])
@@ -60,20 +70,20 @@ def run_real(names, to_html=False):
 
             ks, inv_c_mean, errs, stds, counts   = unpack_stat_dict(statistics_dict)
             av_counts = np.mean(counts)
-
+            median_k = np.median(ks)
             # Now for aggregated data plots
 
-            plt.figure()
-            plt.title(names[i])
+            #plt.figure()
+            #plt.title(names[i])
             folder = 'Output/RealUniNets/' + names[i] + '/'
             # Uncomment to plot all (unaggregated) points
-            plt.plot(k, inv_c,'r.', label="Group 1", alpha=0.1)
-            plt.xscale("log")
-            plt.xlabel(r"$k$")
-            plt.ylabel(r"$\dfrac{1}{c}$", rotation=0, labelpad=20)
-            plt.subplots_adjust(left=0.15, bottom=0.15, right=0.98, top=0.98)
-            plt.savefig(folder + 'inv_c_vs_k_unagg.png', dpi=300)
-            plt.close()
+            #plt.plot(k, inv_c,'r.', label="Group 1", alpha=0.1)
+            #plt.xscale("log")
+            #plt.xlabel(r"$k$")
+            #plt.ylabel(r"$\dfrac{1}{c}$", rotation=0, labelpad=20)
+            #plt.subplots_adjust(left=0.15, bottom=0.15, right=0.98, top=0.98)
+            #plt.savefig(folder + 'inv_c_vs_k_unagg.png', dpi=300)
+            #plt.close()
             # Now for aggregated data plots
             plt.figure()
             plt.errorbar(ks, inv_c_mean, yerr=errs, fmt='.' ,markersize = 5,capsize=2,color='black')
@@ -85,8 +95,8 @@ def run_real(names, to_html=False):
             plt.ylabel(r"$\dfrac{1}{c}$", rotation=0, labelpad=20)
             plt.xscale("log")
             #plt.title(names[i])
-            plt.subplots_adjust(left=0.15, bottom=0.15, right=0.98, top=0.98)
-            plt.savefig(folder + 'inv_c_vs_k_agg.svg', dpi=900)
+            plt.subplots_adjust(left=0.13, bottom=0.13, right=0.98, top=0.98)
+            plt.savefig(folder + 'inv_c_vs_k_agg.png', dpi=600)
             plt.close()
 
             # Now for collapse plot
@@ -94,7 +104,6 @@ def run_real(names, to_html=False):
             y = inv_c_mean/inv_c_pred
             y_err = errs/inv_c_pred
             plt.figure()
-            plt.title(names[i])
             # Shade +/- 0.05
             plt.fill_between(ks, 1-0.05, 1+0.05, color='grey', alpha=0.2, label=r'$\pm 5\%$')
             plt.errorbar(ks, y, yerr=y_err, fmt='.' ,markersize = 5,capsize=2,color='black')
@@ -103,11 +112,10 @@ def run_real(names, to_html=False):
             plt.ylabel(r"$\dfrac{\hat{c}}{c}$", rotation=0, labelpad=20)
             plt.legend()
             plt.subplots_adjust(left=0.15, bottom=0.15, right=0.98, top=0.98)
-            plt.savefig(folder + 'inv_c_vs_k_collapse.svg', dpi=900)
+            plt.savefig(folder + 'inv_c_vs_k_collapse.png', dpi=600)
             plt.close()
 
             plt.figure()
-            plt.title(names[i])
             c_mean = 1/inv_c_mean
             c_pred = 1/inv_c_pred
             plt.plot(c_pred, c_mean, 'ro')
@@ -116,8 +124,9 @@ def run_real(names, to_html=False):
             # Add line at 45 degrees and shade +/- 5%
             plt.plot(c_pred, c_pred, 'k--', label='Expected')
             plt.fill_between(1/inv_c_pred, 1/inv_c_pred*(1-0.05), 1/inv_c_pred*(1+0.05), color='grey', alpha=0.2, label=r'$\pm 5\%$')
-            plt.subplots_adjust(left=0.15, bottom=0.15, right=0.98, top=0.98)
-            plt.savefig(folder + 'c_vs_c_hat.svg', dpi=900)
+            plt.subplots_adjust(left=0.13, bottom=0.13, right=0.98, top=0.98)
+            plt.legend()
+            plt.savefig(folder + 'c_vs_c_hat.svg', dpi=600)
             plt.close()
 
             # Now for network stats
@@ -172,7 +181,7 @@ def run_real(names, to_html=False):
                                     "Beta fit": Bfit, "Beta Fit err": Bfit_err, "density": density, 
                                     "av_degree": avg_degree, "clustering": C,"L": L, "SWI": SWI, 
                                     "asortivity": assortivity, "std_degree": std_degree,
-                                    "av_counts": av_counts}, index=[names[i]])
+                                    "av_counts": av_counts, "median_k": median_k,"r^2":r2}, index=[names[i]])
             final_df = pd.concat([final_df, temp_df])
                 
         # Need to handle errors otherwise code stops. This is not best practice

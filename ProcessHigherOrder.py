@@ -30,7 +30,7 @@ def run_real(names, to_html=False):
     columns =   ["N", "E", "1/ln(z)", "1/ln(z) err", "Beta", "Beta err", "rchi",
                  "pearson r", "pearson p-val", "spearmans r", "spearmans p-val", 
                  "Beta fit", "Beta Fit err" ,"density", "av_degree", "clustering", 
-                 "L", "SWI", "asortivity", "std_degree", "av_counts"]
+                 "L", "SWI", "asortivity", "std_degree", "av_counts","r^2"]
 
     final_df = pd.DataFrame(columns=columns)
     
@@ -53,6 +53,10 @@ def run_real(names, to_html=False):
             # Now process the graph
             k, c,popt,pcov, rchi, r, rp, rs, rsp, statistics_dict, mean_k= process(g, 3, Real = True, Name = name )
             inv_c = 1/c
+
+            r2 = calculate_r_squared(k, inv_c, Tim, popt)
+            
+
             a = popt[0]
             b = popt[1]
             a_err = np.sqrt(pcov[0][0])
@@ -170,7 +174,7 @@ def run_real(names, to_html=False):
             # Calculate power law prob (or most likely degree distribution)
             
             temp_df = pd.DataFrame({"N": num_verticies,"E":num_edges ,"1/ln(z)": a, "1/ln(z) err": a_err,
-                                    "Beta": b, "Beta err": b_err, "rchi": rchi, "pearson r": r,
+                                    "Beta": b, "Beta err": b_err, "rchi": rchi, "r^2":r2,"pearson r": r,
                                     "pearson p-val": rp, "spearmans r": rs, "spearmans p-val": rsp,
                                     "Beta fit": Bfit, "Beta Fit err": Bfit_err, "density": density, 
                                     "av_degree": avg_degree, "clustering": C,"L": L, "SWI": SWI, 
@@ -205,7 +209,7 @@ def run_real(names, to_html=False):
 # Need to get column names for each network from the dataframe
 # Need to do after running get_networks.py
 Unipartite_df = pd.read_pickle('Data/unipartite.pkl')
-upper_node_limit = 100000 # takes around 1 minute per run with 50000
+upper_node_limit = 400000 # takes around 1 minute per run with 50000
 # Filter out num_vertices>2000000
 
 unipartite_df = filter_num_verticies(Unipartite_df, upper_node_limit)

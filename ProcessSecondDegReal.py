@@ -154,7 +154,7 @@ if __name__ == "__main__":
     # Need to do after running get_networks.py
     Unipartite_df = pd.read_pickle('Data/unipartite.pkl')
     
-    upper_node_limit = 40000 # takes too long to run for large networks
+    upper_node_limit = 20000 # takes too long to run for large networks
     
     unipartite_df = filter_num_verticies(Unipartite_df, upper_node_limit)
     uni_network_names = unipartite_df.columns.values.tolist()

@@ -55,7 +55,7 @@ def GetKC(g):
     inv_c = 1/c
     return k, c, inv_c, mean_k
 
-def GetK_2C(g):
+def GetK_2C(g, also_k_1=False):
     """Get closeness and degree for graph_tool graph
     Parameters  
     ----------                  
@@ -84,6 +84,11 @@ def GetK_2C(g):
     c = c[~np.isnan(c)]
     # Get inverse closeness
     inv_c = 1/c
+    if also_k_1:
+        k_1 = np.asarray(k_1)
+        k_1 = k_1[k_2 > 0]
+        return k_1, k_2, c, inv_c, mean_k_2
+
     return k_2, c, inv_c, mean_k_2
 
 # Function to get K and inverse c for bipartite graph
@@ -480,10 +485,10 @@ def Tim(k, a, b):
 
 # Function(s) describing model for bipartite graphs
 def Harry_1(k, a, b, alpha):
-    return -2*np.log(k*(1+np.exp(b)))/(a+b)+alpha
+    return -2*np.log(k*(1+np.exp(b)))/(a+b)-1/(1+np.exp(b))+alpha
 
 def Harry_2(k, a, b, alpha):
-    return -2*np.log(k*(1+np.exp(a)))/(a+b)+alpha
+    return -2*np.log(k*(1+np.exp(a)))/(a+b)-1/(1+np.exp(a)) + alpha
 
 def Tim_2(k_2, a, b):
     return -a*np.log(k_2) + b
@@ -491,13 +496,6 @@ def Tim_2(k_2, a, b):
 def HO_Tim(k,a,b,N):
     pho = 1 - k/(N-1)
     return (-a*np.log(k) + b)*pho + (1-pho)*(1-a)
-
-# Function Descibing analytic relation with second degree
-#
-#
-#---------TO BE ADDED----------------
-#
-#
 
 # Function to perform fit to specified function using curve_fit
 def fitter(k,inv_c,function,N = None, to_print=False):
@@ -532,6 +530,7 @@ def fitter(k,inv_c,function,N = None, to_print=False):
         print("gradient fit :", popt[0],"+/-",np.sqrt(pcov[0][0]))
         print("constant fit :",popt[1],"+/-",np.sqrt(pcov[1][1]))
     return popt, pcov #popt[0], np.sqrt(pcov[0][0]), popt[1], np.sqrt(pcov[1][1])
+
 
 # Function to perform fit to bipartite analytic function, for the simultaneuos fit
 # to both groups. Can do with both iminuit and scipy curve fit 
@@ -670,6 +669,94 @@ def red_chi_square(k, inv_c, function, popt, stats_dict):
     f = len(popt)
     rchi = chi/(len(new_k)-f)
     return rchi
+
+def red_chi_square_bipartite(k_a,k_b,inv_c_a,inv_c_b, function_a, function_b, popt, stats_dict_a, stats_dict_b):
+    """Perform chi square test on unaggregated data
+    Parameters  
+    ----------                  
+    k : array
+        Degree of each node
+    inv_c : array
+        Inverse Closeness of each node
+    function : function
+        Function to fit to
+    popt : array
+        Optimal parameters of fit
+    sigma_dict : dict
+        Dictionary of statistics (including standard deviation) 
+        for given degree
+    
+    Returns
+    -------     
+    chi : float
+        Chi square value
+    p : float
+        p-value"""
+    #initialise new lists for when counts>1
+    ks = [k_a,k_b]
+    inv_cs = [inv_c_a,inv_c_b]
+    functions = [function_a, function_b]
+    stats_dicts = [stats_dict_a, stats_dict_b]
+    chis = []
+    new_ks = []
+    # Lets do this for both groups
+    for j in range(2):
+        sigmas = []
+        new_inv_c = []
+        new_k = []
+        for i in range(len(inv_cs[j])):
+            # Get sigma and count for given degree in array 
+            sigma = stats_dicts[j][ks[j][i]][2]
+            count = stats_dicts[j][ks[j][i]][3]
+            # Need to not use if sigma = 0 (possible for identical nodes)
+            if sigma > 0.001:
+                # if count > 1 add to list as standard deviation is not 0
+                if count>1:
+                    # add to new lists
+                    sigmas.append(sigma)
+                    new_inv_c.append(inv_cs[j][i])
+                    new_k.append(ks[j][i])
+        # perform chi square test
+        sigmas = np.asarray(sigmas)
+        new_inv_c = np.asarray(new_inv_c)
+        new_k = np.asarray(new_k)
+        expected_inv_c = functions[j](new_k, *popt)
+        chi = np.sum(((new_inv_c - expected_inv_c)**2)/(sigmas**2))
+        chis.append(chi)
+        new_ks.append(new_k)
+
+    # get reduced chi square
+    f = len(popt)
+    total_chi = sum(chis)
+    len_k = sum([len(new_ks[0]),len(new_ks[1])])
+    rchi = total_chi/(len_k-f)
+    return rchi
+
+def calculate_r_squared(x_data, y_data, func, popt):
+    """
+    Calculate the R-squared value for a fitted function and data.
+    
+    Parameters:
+    x_data : array_like
+        The x data points.
+    y_data : array_like
+        The y data points.
+    func : callable
+        The fitted function.
+    popt : array_like
+        The optimized parameters for the fitted function.
+    
+    Returns:
+    r_squared : float
+        The R-squared value.
+    """
+    residuals = y_data - func(x_data, *popt)
+    ss_res = np.sum(residuals**2)
+    ss_tot = np.sum((y_data - np.mean(y_data))**2)
+    r_squared = 1 - (ss_res / ss_tot)
+    return r_squared
+
+
 
 # Function to get an analytical value for beta from z_fit
 
@@ -810,6 +897,52 @@ def process(g,type,Real,Name=None):
         rs, rsp = spearman(k_2, c)
         return k_2, c, popt,pcov, rchi, r, rp, rs, rsp , statistics_dict, mean_k_2
 
+def HO_second_degree(X, a, b, N):
+    k_2 = X[0]
+    k = X[1]
+    pho = 1 - k/(N-1)
+    return (-a*np.log(k_2) + b)*pho + (-a)*(1-pho) + 1
+
+def process_second(g,Real,Name=None):
+    if Real:
+        if os.path.exists('Data/GetK_2_K_C/'+Name+'.pkl'):
+            with open('Data/GetK_2_K_C/'+Name+'.pkl','rb') as f:
+                k, k_2, c, inv_c, mean_k_2 = pickle.load(f)
+        else:
+            os.makedirs('Data/GetK_2_K_C',exist_ok=True)
+            k, k_2, c, inv_c, mean_k_2 = GetK_2C(g, also_k_1=True)
+            with open('Data/GetK_2_K_C/'+Name+'.pkl','wb') as f:
+                pickle.dump((k, k_2, c, inv_c, mean_k_2),f)
+    else:
+        k, k_2, c, inv_c, mean_k_2 = GetK_2C(g, also_k_1=True)
+
+    N = len(g.get_vertices())
+
+    # Stack k_2 and k as rows, not columns.
+    xdata = np.vstack((k_2, k))
+
+    HO_second_degree_N = lambda X, a, b: HO_second_degree(X, a, b, N)
+
+    # Initial guess for the parameters
+    p0 = [0.5, 0.5]  # Adjust as necessary
+
+    popt, pcov = optimize.curve_fit(HO_second_degree_N, xdata, inv_c, p0)
+
+    statistics_dict_k = aggregate_dict(k, inv_c)
+    statistics_dict_k_2 = aggregate_dict(k_2, inv_c)
+
+    min_k = min(k)
+    max_k = max(k)
+    k_all = np.linspace(min_k, max_k, 1000)
+    min_k_2 = min(k_2)
+    max_k_2 = max(k_2)
+    k_2_all = np.linspace(min_k_2, max_k_2, 1000)
+
+    
+
+    return k, k_2, c, popt,pcov, statistics_dict_k,statistics_dict_k_2, mean_k_2, HO_second_degree_N
+
+
 # Function to process Bipartite graphs
 def process_bipartite(g,Real = False,Name=None):
     """Perform all analysis on bipartite graph
@@ -848,6 +981,9 @@ def process_bipartite(g,Real = False,Name=None):
     rchi_1 = red_chi_square(k_1, inv_c_1, Harry_1, popt,statistics_dict_1)
     rchi_2 = red_chi_square(k_2, inv_c_2, Harry_2, popt,statistics_dict_2)
 
+    # Combined rchi
+    rchi = red_chi_square_bipartite(k_1, k_2, inv_c_1, inv_c_2, Harry_1, Harry_2, popt,statistics_dict_1,statistics_dict_2)
+
     # Perform correlation tests
     r1, rp1 = pearson(k_1, c_1)
     r2, rp2 = pearson(k_2, c_2)
@@ -858,11 +994,60 @@ def process_bipartite(g,Real = False,Name=None):
     # Return results
     output = [k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2, 
                 rchi_1, rchi_2, r1, r2, rs1, rs2, rp1, rp2, rsp1, rsp2, 
-                popt, errs, statistics_dict_1, statistics_dict_2]
+                popt, errs, statistics_dict_1, statistics_dict_2, rchi]
 
     return output
 
-def process_BFS(g,Real = False,Name=None):
+
+def process_bipartite_uncon(g,Real = False,Name=None):
+    """Perform all analysis on bipartite graph
+    Parameters
+    ----------
+    g : graph_tool graph
+        Graph to be analyzed
+    Returns
+    -------
+    output : list
+        List of all outputs from processing
+    """
+    if Real:
+        if os.path.exists('Data/GetKC_bipartite/'+Name+'.pkl'):
+            with open('Data/GetKC_bipartite/'+Name+'.pkl','rb') as f:
+                k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2 = pickle.load(f)
+        else:
+            os.makedirs('Data/GetKC_bipartite',exist_ok=True)
+            k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2 = GetKC_bipartite(g)
+            with open('Data/GetKC_bipartite/'+Name+'.pkl','wb') as f:
+                pickle.dump((k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2),f)
+    else:
+        # Get degree and closeness for each node in two groups
+        k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2 = GetKC_bipartite(g)
+    
+    function = Tim
+    popt_1, pcov_1 = fitter(k_1, inv_c_1, function)
+    popt_2, pcov_2 = fitter(k_2, inv_c_2, function)
+
+    # Get statistics for each degree
+    statistics_dict_1 = aggregate_dict(k_1, inv_c_1)
+    statistics_dict_2 = aggregate_dict(k_2, inv_c_2)
+
+    # Perform chi square test on each group
+    rchi_1 = calculate_r_squared(k_1, inv_c_1, Tim, popt_1)
+    rchi_2 = calculate_r_squared(k_2, inv_c_2, Tim, popt_2)
+
+    # r_squared
+
+    # Return results
+    output = [k_1, c_1, inv_c_1, k_2, c_2, inv_c_2, mean_k_1, mean_k_2, 
+                rchi_1, rchi_2, popt_1, pcov_1, popt_2, pcov_2, 
+                statistics_dict_1, statistics_dict_2]
+
+    return output
+
+
+
+
+def process_BFS(g,Real = False,Name=None, give_all = False):
     """Perform all analysis on BFS graph
     Parameters
     ----------
@@ -876,17 +1061,20 @@ def process_BFS(g,Real = False,Name=None):
     if Real:
         if os.path.exists('Data/Get_BFS/'+Name+'.pkl'):
             with open('Data/Get_BFS/'+Name+'.pkl','rb') as f:
-                unq_dist, mean_count, std_counts, err_counts = pickle.load(f)
+                unq_dist, mean_count, std_counts, err_counts, all_dist, all_count = pickle.load(f)
         else:
             os.makedirs('Data/Get_BFS',exist_ok=True)
             all_dist, all_count, vs = get_all_counts_with_distance(g)
             unq_dist, mean_count, std_counts, err_counts = get_mean_and_std_at_distances(all_dist, all_count)            
             with open('Data/Get_BFS/'+Name+'.pkl','wb') as f:
-                pickle.dump((unq_dist, mean_count, std_counts, err_counts),f)
+                pickle.dump((unq_dist, mean_count, std_counts, err_counts, all_dist, all_count),f)
     else:
         all_dist, all_count, vs = get_all_counts_with_distance(g)
         unq_dist, mean_count, std_counts, err_counts = get_mean_and_std_at_distances(all_dist, all_count)
     
+    if give_all:
+        return unq_dist, mean_count, std_counts, err_counts, all_dist, all_count
+
     return unq_dist, mean_count, std_counts, err_counts
 
 

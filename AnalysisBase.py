@@ -19,6 +19,9 @@ These first functions are primarily data cleaning functions
 
 """
 
+
+
+
 # Function to get intersection of index of two dataframes
 def get_intersection_index(df1,df2):
     # get the index of the two dataframes

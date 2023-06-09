@@ -5,16 +5,22 @@ warnings.filterwarnings("error")
 import graph_tool.all as gt
 from graph_tool import correlations, generation
 from uncertainties import ufloat, umath
-
-params =    {'font.size' : 16,
-            'axes.labelsize':16,
-            'legend.fontsize': 14,
-            'xtick.labelsize': 14,
-            'ytick.labelsize': 18,
-            'axes.titlesize': 16,
-            'figure.titlesize': 16,
-            'figure.figsize': (12, 12),}
-plt.rcParams.update(params)
+plt.rcParams.update({
+    'font.size': 10,
+    'figure.figsize': (6, 4),
+    'figure.subplot.left': 0.2,
+    'figure.subplot.right': 0.98,
+    'figure.subplot.bottom': 0.13,
+    'figure.subplot.top': 0.98,
+    'axes.labelsize': 11,
+    'axes.titlesize': 10,
+    'legend.fontsize': 14,
+    'xtick.labelsize': 12,
+    'ytick.labelsize': 12,
+    'axes.linewidth': 0.5,
+    'lines.linewidth': 0.5,
+    'lines.markersize': 2,
+})
 
 start = time.time()
 
@@ -106,16 +112,16 @@ def run_bfs(g, Real, Name = None):
 
     # Now plot the results
     fig, ax = plt.subplots(1,1)
-    ax.errorbar(unq_dist, mean_count, yerr = std_count, fmt = 'o', capsize = 5,color='Red', label = 'Numerical')
+    ax.errorbar(unq_dist[1:], mean_count[1:], yerr = std_count[1:], fmt = 'o', capsize = 5,color='Red', label = 'Numerical')
     ax.plot(dist, ns,'k--' , label = 'From Fit')
     ax.fill_between(dist, min_ns, max_ns,color='Blue', alpha = 0.2, label = 'Fit from '+ r'$\pm 1\sigma$')
-    ax.set_xlabel(r'$l$', fontsize = 30, labelpad = 20)
-    ax.set_ylabel(r'$n(l)$', fontsize = 30,rotation = 0, labelpad = 20)
+    ax.set_xlabel(r'$\ell$', fontsize = 16)#, fontsize = 30, labelpad = 20)
+    ax.set_ylabel(r'$\langle n(\ell) \rangle $',rotation = 0,fontsize=16, labelpad = 16)
     #ax.set_title('BFS for {}'.format(Name))
     #ax.set_title('ER with 10000 nodes and Average degree = 10')
-    ax.legend(fontsize = 25)
-
-
+    ax.legend()
+    plt.savefig('ReportPlots/BFS_{}.png'.format(Name), dpi = 900)
+    plt.show()
 
 
 
@@ -129,14 +135,7 @@ def run_bfs(g, Real, Name = None):
     ax[1].legend()
     ax[1].set_xscale('log')
     fig.suptitle('z = {} +/- {}, rchi = {}'.format(z, z_err, rchi))
-    '''
-    if Real:
-        folder = 'Output/RealUniNets/' + Name + '/'
-    else:
-        folder = 'Output/ArtificialUniNets/'+Name+'/'
-    fig.savefig(folder+'bfs.svg', dpi=900)
-    plt.show()
-    plt.close()
+    
     # find cumulative sum
     cumsum = np.cumsum(mean_count)
     cumsum_fit = np.cumsum(ns)
@@ -145,6 +144,7 @@ def run_bfs(g, Real, Name = None):
     ax.errorbar(dist, cumsum, yerr = std_count, fmt = 'o', capsize = 5,color='Red', label = 'Numerical')
     ax.plot(dist, cumsum_fit,'k--' , label = 'From Fit')
     plt.show()
+    '''
 
 
 
@@ -178,5 +178,5 @@ if __name__ == '__main__':
             print('ValueError for', i)
             pass
     '''
-    g = ER(10000,10)
-    run_bfs(g,False,'ER') 
+    g = ER(10000,5)
+    run_bfs(g,True,'ER_k_5_N_10000') 
